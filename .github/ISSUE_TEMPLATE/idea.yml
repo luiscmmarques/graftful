@@ -1,0 +1,36 @@
+name: Idea or product feedback
+description: Suggest an improvement or explain what was confusing
+title: '[Idea]: '
+labels: ['idea']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Graftful. This repository is public, so **do not include medicine names, doses, transplant dates, screenshots of your regimen, or an exported backup.**
+
+        If the idea only makes sense with personal health information, email `hi+ideas@graftful.app` instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Explain the difficulty before describing a feature. That leaves room for a simpler solution.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What do you do today?
+      description: A workaround often explains the need better than a proposed interface.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What would you change?
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Product boundary
+      options:
+        - label: This does not ask Graftful to calculate or recommend a dose, interpret a lab result, warn about interactions, or advise on a missed dose.
+          required: true
+        - label: I have not included personal health information.
+          required: true

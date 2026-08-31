@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Graftful">
+  <title>Graftful</title>
+  <!--
+    Separate artwork for the `maskable` purpose, not a copy of the `any` tile.
+
+    A maskable icon is cropped by the platform to whatever shape it likes — circle, squircle,
+    rounded square — and only the centred circle of 80% diameter is guaranteed to survive. So
+    this draws the mark smaller than the `any` tile does. Its bounding box diagonal is about
+    310 px against a 410 px safe circle, which leaves room on every crop shape.
+  -->
+  <rect width="512" height="512" fill="#1f6f4a" />
+  <g transform="translate(256 256) scale(1) translate(-300.5 -288)">
+    <g fill="none" stroke="#ffffff" stroke-width="46" stroke-linecap="round">
+      <path d="M256 396 V180" />
+      <path d="M256 296 L360 200" />
+    </g>
+    <circle cx="256" cy="296" r="38" fill="#ffffff" />
+  </g>
+</svg>
