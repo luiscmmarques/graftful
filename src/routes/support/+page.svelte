@@ -20,6 +20,7 @@
 		localeFilesUrl,
 		securityMailUrl
 	} from '$lib/contact';
+	import { t } from '$lib/i18n';
 
 	const TWINT_QR = '/twint-qr.png';
 	const PAYPAL_URL = 'https://paypal.me/';
@@ -27,124 +28,99 @@
 </script>
 
 <svelte:head>
-	<title>Support Graftful</title>
-	<meta
-		name="description"
-		content="Graftful is free. The most useful thing you can do is tell someone who needs it."
-	/>
+	<title>{$t.support.title} · Graftful</title>
+	<meta name="description" content={$t.support.metaDescription} />
 </svelte:head>
 
-<h2>Support this</h2>
+<h2>{$t.support.title}</h2>
 
 <div class="card">
 	<p>
-		Graftful is free and will stay free. There is no paid tier, nothing is locked, and no feature
-		depends on money changing hands.
+		{$t.support.free1}
 	</p>
 	<p class="muted">
-		It also costs almost nothing to run: a domain, and hosting that is free at this size. What it
-		genuinely lacks is people knowing it exists. If you have found it useful, telling one other
-		person is worth more than a donation.
+		{$t.support.free2}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Tell someone who needs it</h3>
+	<h3>{$t.support.tellTitle}</h3>
 	<ul>
 		<li>
-			<strong>Another recipient.</strong> Anyone in their first months after a transplant, drowning in
-			boxes. That is the moment this helps most, and the moment nobody has the energy to go looking for
-			a tool.
+			<strong>{$t.support.recipientLead}</strong>
+			{$t.support.recipientBody}
 		</li>
 		<li>
-			<strong>Your transplant coordinator.</strong> They are the people who actually have the adherence
-			conversation, and they are usually glad of something concrete to point at. Not the reception desk.
+			<strong>{$t.support.coordinatorLead}</strong>
+			{$t.support.coordinatorBody}
 		</li>
 		<li>
-			<strong>Your GP or pharmacist.</strong> Your pharmacist in particular sees the consequences of bad
-			reorder timing every week.
+			<strong>{$t.support.pharmacistLead}</strong>
+			{$t.support.pharmacistBody}
 		</li>
 		<li>
-			<strong>A patient association or online group.</strong> One post reaches more people than I ever
-			will alone.
+			<strong>{$t.support.associationLead}</strong>
+			{$t.support.associationBody}
 		</li>
 	</ul>
 	<p class="muted">
-		Nothing to sign up for and nothing to install. Sharing the address is enough. It works in a
-		browser first, and installs to the home screen if wanted.
+		{$t.support.tellNote}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Tell me what is wrong with it</h3>
+	<h3>{$t.support.wrongTitle}</h3>
 	<ul>
-		<li>
-			The thing that confused you, or that you had to work around. Confusion is a defect, not a user
-			error.
-		</li>
-		<li>
-			The case your regimen has that Graftful handles badly. No two regimens are the same, and mine
-			is only one of them.
-		</li>
-		<li>Anything that felt clinically wrong. That matters more than any other kind of report.</li>
+		<li>{$t.support.wrong1}</li>
+		<li>{$t.support.wrong2}</li>
+		<li>{$t.support.wrong3}</li>
 	</ul>
 	<p>
-		<a href={bugFormUrl}>Report a bug on GitHub</a>
-		or email <a href={bugMailUrl}>hi+bugs@graftful.app</a>.
+		<a href={bugFormUrl}>{$t.support.bugLink}</a>
+		{$t.support.wrongOrEmail} <a href={bugMailUrl}>{EMAIL.bugs}</a>.
 	</p>
 	<p class="muted">
-		Both already carry the version you are running ({__APP_VERSION__}), so there is nothing to look
-		up. GitHub issues are public: please do not include medicine names, doses, transplant dates,
-		screenshots of your regimen or an exported backup. Use email if the problem cannot be described
-		without personal health information. Graftful cannot advise on a missed dose or any medication
-		decision; contact your transplant team for that.
+		{$t.support.wrongNote(__APP_VERSION__)}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Ideas and other contact</h3>
+	<h3>{$t.support.ideasTitle}</h3>
 	<p>
-		For an idea or product feedback, use the
-		<a href={ideaFormUrl}>idea form on GitHub</a>
-		or email <a href={ideaMailUrl}>{EMAIL.ideas}</a>.
+		{$t.support.ideasBefore}
+		<a href={ideaFormUrl}>{$t.support.ideaLink}</a>
+		{$t.support.ideasOrEmail} <a href={ideaMailUrl}>{EMAIL.ideas}</a>.
 	</p>
 	<p class="muted">
-		For general questions, partnerships or media: <a href={generalMailUrl}>{EMAIL.general}</a>.
-		Email to the +bugs and +ideas addresses reaches the same mailbox and is sorted there; it is not
-		copied automatically into a public GitHub issue. Security reports go to
-		<a href={securityMailUrl}>{EMAIL.security}</a> instead, so a vulnerability is not made public before
-		it is fixed.
+		{$t.support.contactBefore} <a href={generalMailUrl}>{EMAIL.general}</a>{$t.support.contactAfter}
+		<a href={securityMailUrl}>{EMAIL.security}</a>
+		{$t.support.securityAfter}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Fix a translation</h3>
+	<h3>{$t.support.translationTitle}</h3>
 	<p class="muted">
-		The app shell, Today, Stock, the pharmacy order and the calendar file are available in English,
-		French, German and Portuguese. Order, Setup and pages like this one are still English. The
-		German has not been read by a native speaker yet.
+		{$t.support.translationState}
 	</p>
 	<p>
-		If a word reads wrong, awkward or too formal in your language, that is worth reporting. Send it
-		as a <a href={bugMailUrl}>bug</a>, which needs no GitHub account, or if you are comfortable with
-		code, edit the catalogue directly:
-		<a href={localeFilesUrl}>one file per language</a> in
+		{$t.support.translationBefore}
+		<a href={bugMailUrl}>{$t.support.translationBugLink}</a>{$t.support.translationMiddle}
+		<a href={localeFilesUrl}>{$t.support.translationFilesLink}</a>
+		{$t.support.translationAfter}
 		<code>src/lib/i18n</code>.
 	</p>
 	<p class="muted">
-		A wrong word in a medication app is not cosmetic. Someone deciding whether to trust this with
-		their prescription reads the tone before they read the features, and a translation reaches an
-		entire country that cannot currently use the whole app. It goes considerably further than money
-		does.
+		{$t.support.translationWhy}
 	</p>
 </div>
 
 {#if moneyConfigured}
 	<div class="card">
-		<h3>If you would still rather send something</h3>
-		<p class="muted">Genuinely optional. Managing a transplant is expensive enough.</p>
+		<h3>{$t.support.moneyTitle}</h3>
+		<p class="muted">{$t.support.moneyNote}</p>
 		<div class="row">
-			<img src={TWINT_QR} alt="TWINT QR code" width="180" height="180" />
+			<img src={TWINT_QR} alt={$t.support.twintAlt} width="180" height="180" />
 			<a href={PAYPAL_URL} rel="noopener noreferrer" target="_blank">PayPal</a>
 		</div>
 	</div>

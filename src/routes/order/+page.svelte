@@ -4,6 +4,7 @@
 	import { orderLineText, orderMailto, orderText } from '$lib/domain/order-text';
 	import { formatDays, formatNumber } from '$lib/util';
 	import { locale } from '$lib/locale';
+	import { t } from '$lib/i18n';
 	import { today } from '$lib/lifecycle';
 
 	let forced = $state(false);
@@ -74,53 +75,48 @@
 </script>
 
 <svelte:head>
-	<title>Order · Graftful</title>
-	<meta name="description" content="Prepare a pharmacy order before you run out." />
+	<title>{$t.order.title} · Graftful</title>
+	<meta name="description" content={$t.order.metaDescription} />
 </svelte:head>
 
-<h2>Order</h2>
+<h2>{$t.order.title}</h2>
 
 {#if !$regimen || !plan}
-	<p class="muted">Loading…</p>
+	<p class="muted">{$t.common.loading}</p>
 {:else}
 	{#if triggered.length === 0}
 		<div class="card">
-			<strong>Nothing needs ordering.</strong>
+			<strong>{$t.order.nothingNeeded}</strong>
 			<p class="muted" style="margin:0.25rem 0 0.75rem">
 				{#if plan.projectedNextOrderOn}
-					Next pharmacy run expected around <strong>{plan.projectedNextOrderOn}</strong>.
+					{$t.order.nextRunAround(plan.projectedNextOrderOn)}
 				{:else}
-					No product is being consumed yet.
+					{$t.order.nothingConsumedYet}
 				{/if}
 			</p>
 			{#if !forced}
-				<button onclick={() => (forced = true)}>Order everything early anyway</button>
+				<button onclick={() => (forced = true)}>{$t.order.forceOrder}</button>
 			{/if}
 		</div>
 	{:else}
 		<div class="card" style="border-color: var(--alert)">
-			<strong>
-				{triggered.length}
-				{triggered.length === 1 ? 'product is' : 'products are'} at or below the reorder point.
-			</strong>
+			<strong>{$t.order.atReorderPoint(triggered.length)}</strong>
 			<ul>
 				{#each triggered as status (status.productId)}
-					<li>{status.brandName}: {formatDays(status.daysRemaining)} days left</li>
+					<li>{status.brandName}: {$t.order.daysLeft(formatDays(status.daysRemaining))}</li>
 				{/each}
 			</ul>
 			<p class="muted" style="margin-bottom:0">
-				Everything else is topped up to the same horizon, so the next order lands as a single
-				pharmacy run rather than several.
+				{$t.order.jointNote}
 			</p>
 		</div>
 	{/if}
 
 	{#if candidates.length > 0}
 		<div class="card">
-			<h3>Add anything else?</h3>
+			<h3>{$t.order.addAnythingTitle}</h3>
 			<p class="muted">
-				Nothing takes these on a schedule, so no calculation will ever ask for them, but they run
-				out too. Worth topping up while you are ordering.
+				{$t.order.addAnythingNote}
 			</p>
 			{#each candidates as candidate (candidate.productId)}
 				<div class="line">
@@ -128,17 +124,19 @@
 						<div>
 							<strong>{candidate.brandName}</strong>
 							<div class="muted">
-								{formatNumber(candidate.onHand)} left &middot; boxes of {candidate.packageSize}
+								{$t.stock.left(formatNumber(candidate.onHand))} &middot; {$t.order.boxesOf(
+									candidate.packageSize
+								)}
 							</div>
 						</div>
 						<div class="row">
 							<button
 								onclick={() => bump(candidate.productId, -1)}
 								disabled={(additions[candidate.productId] ?? 0) === 0}
-								aria-label="One box fewer">−</button
+								aria-label={$t.order.oneBoxFewer}>−</button
 							>
 							<span class="count">{additions[candidate.productId] ?? 0}</span>
-							<button onclick={() => bump(candidate.productId, 1)} aria-label="One box more">
+							<button onclick={() => bump(candidate.productId, 1)} aria-label={$t.order.oneBoxMore}>
 								+
 							</button>
 						</div>
@@ -150,47 +148,47 @@
 
 	{#if plan.lines.length > 0}
 		<div class="card">
-			<h3>Suggested order</h3>
+			<h3>{$t.order.suggestedTitle}</h3>
 
 			<label class="field">
-				<span>When would you like it ready? (optional)</span>
-				<input bind:value={collectionNote} placeholder="vendredi matin" />
+				<span>{$t.order.whenReadyLabel}</span>
+				<input bind:value={collectionNote} placeholder={$t.order.whenReadyPlaceholder} />
 			</label>
 
 			{#each plan.lines as line (line.productId)}
 				<div class="line">
 					<div>
 						<code>{orderLineText(line, $locale)}</code>
-						{#if line.capped}<span class="badge warn">capped</span>{/if}
-						{#if line.optional}<span class="badge">added by you</span>{/if}
+						{#if line.capped}<span class="badge warn">{$t.order.capped}</span>{/if}
+						{#if line.optional}<span class="badge">{$t.order.addedByYou}</span>{/if}
 					</div>
 					{#if line.coversToDays !== null}
-						<div class="muted">covers to {formatDays(line.coversToDays)} days</div>
+						<div class="muted">{$t.order.coversTo(formatDays(line.coversToDays))}</div>
 					{/if}
 				</div>
 			{/each}
 
 			{#if plan.projectedNextOrderOn}
 				<p class="muted">
-					After this order, the next run is expected around
-					<strong>{plan.projectedNextOrderOn}</strong>.
+					{$t.order.nextRunAfter(plan.projectedNextOrderOn)}
 				</p>
 			{/if}
 
 			<div class="row">
-				<button class="primary" onclick={copy}>{copied ? 'Copied' : 'Copy order text'}</button>
+				<button class="primary" onclick={copy}
+					>{copied ? $t.order.copied : $t.order.copyText}</button
+				>
 				{#if mailto}
-					<a href={mailto}><button>Open in email</button></a>
+					<a href={mailto}><button>{$t.order.openInEmail}</button></a>
 				{/if}
-				<button onclick={markOrdered}>Mark as ordered</button>
+				<button onclick={markOrdered}>{$t.order.markOrdered}</button>
 			</div>
 			<p class="muted">
-				Marking it ordered records the request and silences the reminder. It does not change your
-				stock. That happens when the order arrives.
+				{$t.order.markOrderedNote}
 			</p>
 
 			<details>
-				<summary>Full order text</summary>
+				<summary>{$t.order.fullText}</summary>
 				<pre>{text}</pre>
 			</details>
 		</div>
@@ -198,14 +196,16 @@
 
 	{#if openOrders.length > 0}
 		<div class="card">
-			<h3>Awaiting collection</h3>
+			<h3>{$t.order.awaitingTitle}</h3>
 			{#each openOrders as { line, product } (line.id)}
 				<div class="line">
 					<div>
 						<strong>{product?.brandName ?? line.productId}</strong>
 						<span class="muted">
-							{formatNumber(line.unitsOrdered - (line.unitsReceived ?? 0))} units outstanding, ordered
-							{line.orderedOn}
+							{$t.order.outstanding(
+								formatNumber(line.unitsOrdered - (line.unitsReceived ?? 0)),
+								line.orderedOn
+							)}
 						</span>
 					</div>
 					<div class="row">
@@ -214,20 +214,19 @@
 							onclick={() =>
 								receiveOrderLine(line.id, line.unitsOrdered - (line.unitsReceived ?? 0), $today)}
 						>
-							Received in full
+							{$t.order.receivedFull}
 						</button>
 						{#if product}
 							<button onclick={() => receiveOrderLine(line.id, product.packageSize, $today)}>
-								Received 1 box only
+								{$t.order.receivedOneBox}
 							</button>
 						{/if}
 					</div>
 				</div>
 			{/each}
 			<p class="muted" style="margin-bottom:0">
-				These products are often dispensed short. Recording a partial delivery keeps the remainder
-				visible rather than quietly losing it. If the box turned out to be a different size than
-				expected, correct it in <a href="/stock">Stock</a>.
+				{$t.order.partialNote}
+				<a href="/stock">{$t.order.fixBoxSize}</a>
 			</p>
 		</div>
 	{/if}

@@ -9,30 +9,30 @@
 	 * every route is one tap away. The only thing worth adding is a plain explanation and a
 	 * direct route to the screen people actually came for.
 	 *
-	 * English only, consistent with the other content pages, which are not translated yet.
+	 * The document Cloudflare serves as 404.html carries prerendered English, because a
+	 * static file cannot know the reader's language. Hydration replaces it with theirs.
 	 */
 	import { page } from '$app/state';
+	import { t } from '$lib/i18n';
 </script>
 
 <svelte:head>
-	<title>Page not found · Graftful</title>
+	<title>{$t.notFound.title} · Graftful</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<h2>Page not found</h2>
+<h2>{$t.notFound.title}</h2>
 
 <div class="card">
 	<p>
 		{#if page.status === 404}
-			There is no page at this address. The link may be mistyped, or it may point at something this
-			version of Graftful does not have.
+			{$t.notFound.body404}
 		{:else}
-			Something went wrong loading this page.
+			{$t.notFound.bodyOther}
 		{/if}
 	</p>
 	<p class="muted">
-		Nothing you have entered is affected. Your regimen, stock counts and history are stored by your
-		browser on this device, and a bad link does not touch them.
+		{$t.notFound.dataSafe}
 	</p>
-	<p><a href="/">Go to Today</a></p>
+	<p><a href="/">{$t.notFound.goToToday}</a></p>
 </div>

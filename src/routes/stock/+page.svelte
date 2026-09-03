@@ -37,7 +37,7 @@
 	async function refill(productId: string, packageSize: number) {
 		const boxes = normaliseNumber(packages, LIMITS.packages);
 		if (boxes === null) {
-			stockError = 'Boxes must be a whole number, at least 1.';
+			stockError = $t.stock.errorBoxes;
 			return;
 		}
 
@@ -50,7 +50,7 @@
 		// Zero is valid — an empty box is a real thing to record. Negative is not.
 		const units = normaliseNumber(recount, LIMITS.stockUnits);
 		if (units === null) {
-			stockError = 'A count cannot be negative.';
+			stockError = $t.stock.errorCount;
 			return;
 		}
 
@@ -62,7 +62,7 @@
 	async function applyBoxSize(productId: string) {
 		const size = normaliseNumber(boxSize, LIMITS.packageSize);
 		if (size === null) {
-			stockError = 'Units per box must be a whole number, at least 1.';
+			stockError = $t.common.errorPackageSize;
 			return;
 		}
 
@@ -73,7 +73,7 @@
 
 <svelte:head>
 	<title>{$t.stock.title} · Graftful</title>
-	<meta name="description" content="How many pills are left, and how long they will last." />
+	<meta name="description" content={$t.stock.metaDescription} />
 </svelte:head>
 
 <h2>{$t.stock.title}</h2>
@@ -90,7 +90,7 @@
 					<strong>{product.brandName} {product.strength}{product.strengthUnit}</strong>
 					<div class="muted">
 						{#if product.form}{product.form} &middot;
-						{/if}{product.packageSize} per box
+						{/if}{$t.stock.perBox(product.packageSize)}
 					</div>
 				</div>
 				<div style="text-align:right">

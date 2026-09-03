@@ -23,7 +23,7 @@
 
 <svelte:head>
 	<title>{$t.today.title} · Graftful</title>
-	<meta name="description" content="What to take today, and when." />
+	<meta name="description" content={$t.today.metaDescription} />
 </svelte:head>
 
 {#if $regimen === undefined}

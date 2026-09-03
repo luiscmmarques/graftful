@@ -25,7 +25,8 @@
 	import type { DoseVersion, Product, RegimenState, Therapy, Unit } from '$lib/domain/types';
 	import { downloadFile, formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
-	import { locale, LOCALES } from '$lib/locale';
+	import { browserLocale, locale, LOCALES } from '$lib/locale';
+	import { t } from '$lib/i18n';
 	import type { Locale } from '$lib/domain/locale';
 	import {
 		LIMITS,
@@ -104,8 +105,7 @@
 		const floor = normaliseNumber(eMinDays, LIMITS.minDays);
 
 		if (!eBrand.trim() || strength === null || pack === null || floor === null) {
-			productError =
-				'Check the name, strength, units per box and reorder floor — each must be a positive number.';
+			productError = $t.setup.errorProductFields;
 			return;
 		}
 
@@ -122,13 +122,16 @@
 	}
 
 	async function removeProduct(productId: string) {
-		if (!confirm('Delete this product permanently?')) return;
+		if (!confirm($t.setup.confirmDeleteProduct)) return;
 		try {
 			await deleteProduct(productId);
 			editing = null;
 			productError = '';
 		} catch (error) {
-			productError = error instanceof Error ? error.message : 'Could not delete';
+			// The thrown text comes from the data layer and is English wherever it surfaces.
+			// Translating it means giving those errors codes, which is a change to the layer
+			// below rather than to this screen.
+			productError = error instanceof Error ? error.message : $t.setup.errorCouldNotDelete;
 		}
 	}
 
@@ -173,11 +176,11 @@
 		// Reported rather than skipped: silently dropping "25:00" would leave someone
 		// believing they had set a time they had not.
 		if (invalid.length > 0) {
-			doseTimesError = `Not a time: ${invalid.join(', ')}. Use HH:MM, like 08:00.`;
+			doseTimesError = $t.setup.errorNotATime(invalid.join(', '));
 			return;
 		}
 		if (times.length === 0) {
-			doseTimesError = 'Give at least one time, like 08:00.';
+			doseTimesError = $t.setup.errorNoTime;
 			return;
 		}
 
@@ -318,7 +321,7 @@
 
 		const effectiveFrom = normaliseDate(dFrom);
 		if (effectiveFrom === null) {
-			doseError = 'That start date does not exist. Use YYYY-MM-DD.';
+			doseError = $t.setup.errorBadStartDate;
 			return;
 		}
 
@@ -326,7 +329,7 @@
 		for (const slot of dSlots) {
 			const time = normaliseTime(slot.time);
 			if (time === null) {
-				doseError = `"${slot.time}" is not a time. Use HH:MM, like 08:00.`;
+				doseError = $t.setup.errorSlotTime(slot.time);
 				return;
 			}
 
@@ -334,11 +337,11 @@
 			for (const item of slot.items) {
 				const units = normaliseNumber(item.units, LIMITS.units);
 				if (units === null) {
-					doseError = 'Every product needs a quantity above zero.';
+					doseError = $t.setup.errorUnits;
 					return;
 				}
 				if (!item.productId) {
-					doseError = 'Choose a product for every line.';
+					doseError = $t.setup.errorChooseProduct;
 					return;
 				}
 				items.push({ productId: item.productId, units });
@@ -362,18 +365,18 @@
 			 * exported calendar look as if it had never existed precisely after it became stale.
 			 */
 		} catch (error) {
-			doseError = error instanceof Error ? error.message : 'Could not save the dose';
+			doseError = error instanceof Error ? error.message : $t.setup.errorSaveDose;
 		}
 	}
 
 	async function removeTherapy(therapyId: string) {
-		if (!confirm('Delete this therapy and its doses?')) return;
+		if (!confirm($t.setup.confirmDeleteTherapy)) return;
 		try {
 			await deleteTherapy(therapyId, $today);
 			editingTherapy = null;
 			therapyError = '';
 		} catch (error) {
-			therapyError = error instanceof Error ? error.message : 'Could not delete';
+			therapyError = error instanceof Error ? error.message : $t.setup.errorCouldNotDelete;
 		}
 	}
 
@@ -384,13 +387,13 @@
 	async function saveSettingsForm() {
 		const date = transplantDate === '' ? '' : normaliseDate(transplantDate);
 		if (date === null) {
-			settingsError = 'That date does not exist. Use YYYY-MM-DD.';
+			settingsError = $t.setup.errorBadDate;
 			return;
 		}
 
 		const days = normaliseNumber(horizon, LIMITS.horizonDays);
 		if (days === null) {
-			settingsError = 'The horizon must be a whole number of days, at least 1.';
+			settingsError = $t.setup.errorHorizon;
 			return;
 		}
 
@@ -402,7 +405,7 @@
 
 	async function addProduct() {
 		if (!pBrand.trim()) {
-			productFormError = 'Give the product a name.';
+			productFormError = $t.setup.errorProductName;
 			return;
 		}
 
@@ -414,19 +417,19 @@
 		const stock = normaliseNumber(pStock === 0 ? '0' : pStock, LIMITS.stockUnits);
 
 		if (strength === null) {
-			productFormError = 'The strength must be a positive number.';
+			productFormError = $t.setup.errorStrength;
 			return;
 		}
 		if (pack === null) {
-			productFormError = 'Units per box must be a whole number, at least 1.';
+			productFormError = $t.common.errorPackageSize;
 			return;
 		}
 		if (floor === null) {
-			productFormError = 'The reorder floor must be a whole number of days.';
+			productFormError = $t.setup.errorMinDays;
 			return;
 		}
 		if (stock === null) {
-			productFormError = 'Units on hand cannot be negative.';
+			productFormError = $t.setup.errorStockNegative;
 			return;
 		}
 
@@ -449,7 +452,7 @@
 
 	async function addTherapy() {
 		if (!tName.trim()) {
-			therapyFormError = 'Give the therapy a name.';
+			therapyFormError = $t.setup.errorTherapyName;
 			return;
 		}
 
@@ -463,7 +466,7 @@
 		if (!tPrn && tItems.length > 0) {
 			const parsed = parseTimeList(tTimes);
 			if (parsed.invalid.length > 0 || parsed.times.length === 0) {
-				therapyFormError = 'Check the times: use HH:MM, like 08:00.';
+				therapyFormError = $t.setup.errorTimes;
 				return;
 			}
 			times = parsed.times;
@@ -471,7 +474,7 @@
 			for (const item of tItems) {
 				const units = normaliseNumber(item.units, LIMITS.units);
 				if (!item.productId || units === null) {
-					therapyFormError = 'Choose a product and a positive quantity for every line.';
+					therapyFormError = $t.setup.errorProductQuantity;
 					return;
 				}
 				items.push({ productId: item.productId, units });
@@ -520,7 +523,7 @@
 		 * wrong moment would be holding a file that destroys the data it is meant to save.
 		 */
 		if (!$regimen || ($regimen.products.length === 0 && $regimen.therapies.length === 0)) {
-			exportError = 'Nothing to export yet — there is no regimen on this device.';
+			exportError = $t.setup.errorNothingToExport;
 			return;
 		}
 		exportError = '';
@@ -543,7 +546,7 @@
 	 * not delete is the worst thing here to get wrong.
 	 */
 	async function deleteEverything() {
-		if (!confirm('Delete everything on this device?')) return;
+		if (!confirm($t.setup.confirmDeleteAll)) return;
 		deleteState = 'working';
 		deleteError = '';
 		try {
@@ -551,7 +554,7 @@
 			deleteState = 'done';
 		} catch (error) {
 			deleteState = 'idle';
-			deleteError = error instanceof Error ? error.message : 'Delete failed';
+			deleteError = error instanceof Error ? error.message : $t.setup.errorDeleteFailed;
 		}
 	}
 
@@ -566,11 +569,7 @@
 		 * regimen without one was both inconsistent and much higher impact. Reset the input on
 		 * cancel so selecting the same file again still fires `change`.
 		 */
-		if (
-			!confirm(
-				'Importing this backup will replace every product, dose, stock count and order on this device. Continue?'
-			)
-		) {
+		if (!confirm($t.setup.confirmImport)) {
 			input.value = '';
 			return;
 		}
@@ -578,11 +577,12 @@
 		try {
 			// Anything the backup could not supply is reported rather than swallowed: a
 			// restore that quietly drops half a regimen is worse than one that refuses.
+			// The warnings themselves come from the domain's validator and are English.
 			importWarnings = await importJson(await file.text());
 			importError = '';
 		} catch (error) {
 			importWarnings = [];
-			importError = error instanceof Error ? error.message : 'Import failed';
+			importError = error instanceof Error ? error.message : $t.setup.errorImportFailed;
 		} finally {
 			input.value = '';
 		}
@@ -590,39 +590,36 @@
 </script>
 
 <svelte:head>
-	<title>Setup · Graftful</title>
-	<meta name="description" content="Your products, doses, reminders and backups." />
+	<title>{$t.setup.title} · Graftful</title>
+	<meta name="description" content={$t.setup.metaDescription} />
 </svelte:head>
 
-<h2>Setup</h2>
+<h2>{$t.setup.title}</h2>
 
 <div class="card">
-	<h3>Reminders</h3>
+	<h3>{$t.setup.remindersTitle}</h3>
 	{#if icsNeverExported}
 		<p class="muted">
-			No web API can schedule a notification locally, so reminders work through your phone's
-			calendar. Export once and import the file into your calendar app.
+			{$t.setup.icsNever}
 		</p>
 	{:else if icsStale}
 		<p class="stale" role="alert">
-			<strong>Your calendar is out of date.</strong> The schedule, language or timezone changed since
-			you last exported. Export again and re-import. Existing reminders at the same times will update;
-			if a time was removed or changed, delete the old Graftful reminder from your calendar first.
+			<strong>{$t.setup.icsStaleTitle}</strong>
+			{$t.setup.icsStaleBody}
 		</p>
 	{:else}
-		<p class="muted">Your calendar matches the current schedule.</p>
+		<p class="muted">{$t.setup.icsCurrent}</p>
 	{/if}
-	<button class="primary" onclick={exportIcs}>Export reminders (.ics)</button>
+	<button class="primary" onclick={exportIcs}>{$t.setup.exportIcs}</button>
 	<p class="muted" style="margin-bottom:0">
-		As-needed medication is left out, because there is no schedule to put in a calendar. Push
-		notifications, with a "taken" button, come in a later version.
+		{$t.setup.icsNote}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Language</h3>
+	<h3>{$t.setup.languageTitle}</h3>
 	<label class="field">
-		<span>Language for the pharmacy order and the calendar export</span>
+		<span>{$t.setup.languageLabel}</span>
 		<select
 			value={$settingsStore?.locale ?? ''}
 			onchange={(event) =>
@@ -630,51 +627,50 @@
 					locale: (event.currentTarget.value || undefined) as Locale | undefined
 				})}
 		>
-			<option value="">Follow my browser ({$locale === 'fr' ? 'Français' : 'English'})</option>
+			<option value="">
+				{$t.setup.followBrowser(
+					LOCALES.find((option) => option.value === browserLocale())?.label ?? 'English'
+				)}
+			</option>
 			{#each LOCALES as option (option.value)}
 				<option value={option.value}>{option.label}</option>
 			{/each}
 		</select>
 	</label>
 	<p class="muted" style="margin-bottom:0">
-		The screens themselves are English for now. This already sets the language of the two things
-		that leave the app: the order you send your pharmacy, and the calendar file. So you can send a
-		French order from an English phone.
+		{$t.setup.languageNote}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Your usual times</h3>
+	<h3>{$t.setup.timesTitle}</h3>
 	<label class="field">
-		<span>When you normally take medication, comma separated</span>
+		<span>{$t.setup.timesLabel}</span>
 		<input bind:value={doseTimesDraft} placeholder="08:00, 20:00" />
 	</label>
-	<button onclick={saveDoseTimes}>Save times</button>
+	<button onclick={saveDoseTimes}>{$t.setup.saveTimes}</button>
 	{#if doseTimesError}<p class="stale">{doseTimesError}</p>{/if}
 	<p class="muted" style="margin-bottom:0">
-		Only used to fill in the times when you add something new. Each dose keeps its own, and you can
-		change any of them individually. Set whatever you and your centre agreed; Graftful will not
-		suggest an interval, because how far apart your doses should be is a decision for your
-		prescriber.
+		{$t.setup.timesNote}
 	</p>
 </div>
 
 <div class="card">
-	<h3>Your details</h3>
+	<h3>{$t.setup.detailsTitle}</h3>
 	<label class="field">
-		<span>Transplant date</span>
+		<span>{$t.setup.transplantDate}</span>
 		<input type="date" bind:value={transplantDate} />
 	</label>
 	<label class="field">
-		<span>Top-up horizon in days: how far ahead an order should cover</span>
+		<span>{$t.setup.horizonLabel}</span>
 		<input type="number" min="7" step="1" bind:value={horizon} />
 	</label>
-	<button onclick={saveSettingsForm}>Save</button>
+	<button onclick={saveSettingsForm}>{$t.common.save}</button>
 	{#if settingsError}<p class="stale">{settingsError}</p>{/if}
 </div>
 
 <div class="card">
-	<h3>Products</h3>
+	<h3>{$t.setup.productsTitle}</h3>
 	{#if $regimen && $regimen.products.length > 0}
 		{#each $regimen.products as product (product.id)}
 			{@const usage = productUsage($regimen, product.id)}
@@ -686,83 +682,86 @@
 							{product.strengthUnit === 'cp' ? '' : `${product.strength} ${product.strengthUnit}`}
 						</strong>
 						<div class="muted">
-							{product.packageSize} per box &middot; reorder at {product.minDays}d
+							{$t.stock.perBox(product.packageSize)} &middot; {$t.setup.reorderAt(product.minDays)}
 							{#if product.form}&middot; {product.form}{/if}
 						</div>
 					</div>
 					<div class="row">
-						{#if product.retired}<span class="badge">retired</span>{/if}
+						{#if product.retired}<span class="badge">{$t.setup.retired}</span>{/if}
 						<button onclick={() => openEditor(product)}>
-							{editing === product.id ? 'Close' : 'Edit'}
+							{editing === product.id ? $t.common.close : $t.common.edit}
 						</button>
 					</div>
 				</div>
 
 				{#if editing === product.id}
 					<div class="editor">
-						<label class="field"><span>Brand name</span><input bind:value={eBrand} /></label>
+						<label class="field"
+							><span>{$t.setup.brandName}</span><input bind:value={eBrand} /></label
+						>
 						<div class="grid">
 							<label class="field">
-								<span>Strength</span>
+								<span>{$t.setup.strength}</span>
 								<input type="number" step="0.5" bind:value={eStrength} />
 							</label>
 							<label class="field">
-								<span>Unit</span>
+								<span>{$t.setup.unit}</span>
 								<select bind:value={eUnit}>
 									<option value="mg">mg</option>
 									<option value="g">g</option>
-									<option value="cp">cp (whole pill)</option>
+									<option value="cp">{$t.setup.unitWholePill}</option>
 								</select>
 							</label>
 							<label class="field">
-								<span>Units per box</span>
+								<span>{$t.setup.unitsPerBox}</span>
 								<input type="number" min="1" step="1" bind:value={ePack} />
 							</label>
 							<label class="field">
-								<span>Reorder floor (days)</span>
+								<span>{$t.setup.reorderFloor}</span>
 								<input type="number" min="0" step="1" bind:value={eMinDays} />
 							</label>
 							<label class="field">
-								<span>Form (optional)</span>
-								<input bind:value={eForm} placeholder="tablet, capsule…" />
+								<span>{$t.setup.form}</span>
+								<input bind:value={eForm} placeholder={$t.setup.formPlaceholder} />
 							</label>
 						</div>
 						<div class="row">
-							<button class="primary" onclick={() => saveProduct(product.id)}>Save changes</button>
+							<button class="primary" onclick={() => saveProduct(product.id)}>
+								{$t.setup.saveChanges}
+							</button>
 						</div>
 
 						<div class="lifecycle">
 							{#if product.retired}
 								<button onclick={() => setProductRetired(product.id, false)}>
-									Start using this again
+									{$t.setup.restoreProduct}
 								</button>
 								<p class="muted">
-									Restoring it puts it back into the schedule calculations and the order list.
+									{$t.setup.restoreProductNote}
 								</p>
 							{:else}
-								<button onclick={() => setProductRetired(product.id, true)}>Retire</button>
+								<button onclick={() => setProductRetired(product.id, true)}>
+									{$t.setup.retire}
+								</button>
 								<p class="muted">
-									Retiring is how you stop using something. It stays in your history, keeps its
-									stock, and past orders still make sense. It just drops out of ordering. This is
-									the right choice when a strength is discontinued or a dose changes.
+									{$t.setup.retireNote}
 								</p>
 							{/if}
 
 							{#if usage.canDelete}
 								<button class="danger" onclick={() => removeProduct(product.id)}>
-									Delete permanently
+									{$t.setup.deletePermanently}
 								</button>
 								<p class="muted">
-									Nothing refers to this product, so deleting it loses nothing. Use this for
-									something typed in by mistake.
+									{$t.setup.deleteProductNote}
 								</p>
 							{:else}
 								<p class="muted">
-									This cannot be deleted: it appears in {usage.doseVersions}
-									{usage.doseVersions === 1 ? 'dose' : 'doses'}, {usage.stockEvents} stock
-									{usage.stockEvents === 1 ? 'entry' : 'entries'} and {usage.orderLines}
-									{usage.orderLines === 1 ? 'order' : 'orders'}. Removing it would leave a history
-									that no longer adds up. Retire it instead.
+									{$t.setup.cannotDeleteProduct(
+										usage.doseVersions,
+										usage.stockEvents,
+										usage.orderLines
+									)}
 								</p>
 							{/if}
 							{#if productError}<p class="stale">{productError}</p>{/if}
@@ -772,53 +771,62 @@
 			</div>
 		{/each}
 	{:else}
-		<p class="muted">None yet.</p>
+		<p class="muted">{$t.common.none}</p>
 	{/if}
 
 	<details>
-		<summary>Add a product</summary>
-		<label class="field"><span>Brand name</span><input bind:value={pBrand} /></label>
+		<summary>{$t.setup.addProduct}</summary>
+		<label class="field"><span>{$t.setup.brandName}</span><input bind:value={pBrand} /></label>
 		<div class="grid">
 			<label class="field"
-				><span>Strength</span><input type="number" step="0.5" bind:value={pStrength} /></label
+				><span>{$t.setup.strength}</span><input
+					type="number"
+					step="0.5"
+					bind:value={pStrength}
+				/></label
 			>
 			<label class="field">
-				<span>Unit</span>
+				<span>{$t.setup.unit}</span>
 				<select bind:value={pUnit}>
 					<option value="mg">mg</option>
 					<option value="g">g</option>
-					<option value="cp">cp (whole pill)</option>
+					<option value="cp">{$t.setup.unitWholePill}</option>
 				</select>
 			</label>
 			<label class="field"
-				><span>Units per box (ask the pharmacy)</span><input
+				><span>{$t.setup.unitsPerBoxAsk}</span><input
 					type="number"
 					step="1"
 					bind:value={pPack}
 				/></label
 			>
 			<label class="field"
-				><span>Reorder floor (days)</span><input
+				><span>{$t.setup.reorderFloor}</span><input
 					type="number"
 					step="1"
 					bind:value={pMinDays}
 				/></label
 			>
 			<label class="field"
-				><span>Units on hand</span><input type="number" step="1" bind:value={pStock} /></label
+				><span>{$t.setup.unitsOnHand}</span><input
+					type="number"
+					step="1"
+					bind:value={pStock}
+				/></label
 			>
 		</div>
-		<button class="primary" onclick={addProduct} disabled={!pBrand.trim()}>Add product</button>
+		<button class="primary" onclick={addProduct} disabled={!pBrand.trim()}>
+			{$t.setup.addProductButton}
+		</button>
 		{#if productFormError}<p class="stale">{productFormError}</p>{/if}
 		<p class="muted" style="margin-bottom:0">
-			If you do not know the box size yet, put your best guess in. You can correct it here or from
-			Stock once the pharmacy tells you, and it only affects how many boxes an order asks for.
+			{$t.setup.addProductNote}
 		</p>
 	</details>
 </div>
 
 <div class="card">
-	<h3>Therapies</h3>
+	<h3>{$t.setup.therapiesTitle}</h3>
 	{#if $regimen && $regimen.therapies.length > 0}
 		{#each $regimen.therapies as therapy (therapy.id)}
 			{@const usage = therapyUsage($regimen, therapy.id, $today)}
@@ -829,55 +837,64 @@
 						<strong class:retired={therapy.stoppedOn}>{therapy.name}</strong>
 						<div class="muted">
 							{therapy.category}
-							{#if therapy.isPrn}&middot; as needed{/if}
+							{#if therapy.isPrn}&middot; {$t.setup.asNeededInline}{/if}
 							{#if versions.length > 0}
-								&middot; {versions.length} dose {versions.length === 1 ? 'version' : 'versions'}
+								&middot; {$t.setup.doseVersions(versions.length)}
 							{/if}
 						</div>
 					</div>
 					<div class="row">
-						{#if therapy.stoppedOn}<span class="badge">stopped {therapy.stoppedOn}</span>{/if}
+						{#if therapy.stoppedOn}<span class="badge">
+								{$t.setup.stoppedOn(therapy.stoppedOn)}
+							</span>{/if}
 						<button onclick={() => openTherapy(therapy, versions)}>
-							{editingTherapy === therapy.id ? 'Close' : 'Edit'}
+							{editingTherapy === therapy.id ? $t.common.close : $t.common.edit}
 						</button>
 					</div>
 				</div>
 
 				{#if editingTherapy === therapy.id}
 					<div class="editor">
-						<label class="field"><span>Name</span><input bind:value={tEditName} /></label>
+						<label class="field"><span>{$t.setup.name}</span><input bind:value={tEditName} /></label
+						>
 						<div class="grid">
-							<label class="field"><span>Category</span><input bind:value={tEditCategory} /></label>
+							<label class="field"
+								><span>{$t.setup.category}</span><input bind:value={tEditCategory} /></label
+							>
 							<label class="field">
-								<span>Active ingredient (optional)</span>
-								<input bind:value={tEditIngredient} placeholder="the morning dose" />
+								<span>{$t.setup.activeIngredient}</span>
+								<input
+									bind:value={tEditIngredient}
+									placeholder={$t.setup.activeIngredientPlaceholder}
+								/>
 							</label>
 							<label class="field">
-								<span>Started on</span>
+								<span>{$t.setup.startedOn}</span>
 								<input type="date" bind:value={tEditStarted} />
 							</label>
 						</div>
 						<label class="row" style="margin-bottom:0.625rem">
 							<input type="checkbox" bind:checked={tEditPrn} style="width:auto;min-height:auto" />
-							<span>As needed (no schedule)</span>
+							<span>{$t.setup.asNeededCheckbox}</span>
 						</label>
-						<button class="primary" onclick={() => saveTherapy(therapy.id)}>Save details</button>
+						<button class="primary" onclick={() => saveTherapy(therapy.id)}>
+							{$t.setup.saveDetails}
+						</button>
 
 						{#if versions.length > 0}
 							<div class="lifecycle">
-								<h3>Dose history</h3>
+								<h3>{$t.setup.doseHistoryTitle}</h3>
 								{#each versions as version (version.id)}
 									{@const check = checkDoseConsistency(version, $regimen.products)}
 									{@const composed = composedDose($regimen.products, version.slots)}
 									<div class="version">
 										<div class="row" style="justify-content: space-between">
 											<strong>
-												{version.activeFrom} &rarr; {version.activeTo ?? 'now'}
+												{version.activeFrom} &rarr; {version.activeTo ?? $t.setup.now}
 											</strong>
 											{#if composed.unit}
 												<span class="badge">
-													{formatNumber(composed.perDay)}
-													{composed.unit}/day
+													{$t.setup.perDayUnit(formatNumber(composed.perDay), composed.unit)}
 												</span>
 											{/if}
 										</div>
@@ -889,9 +906,11 @@
 										{/each}
 										{#if !check.ok}
 											<p class="stale">
-												Recorded as {check.declared}
-												{check.unit} prescribed, but the products listed add up to {check.composed}
-												{check.unit}. Worth checking against your prescription.
+												{$t.setup.doseMismatch(
+													String(check.declared),
+													String(check.composed),
+													String(check.unit)
+												)}
 											</p>
 										{/if}
 									</div>
@@ -901,15 +920,13 @@
 
 						{#if !therapy.isPrn}
 							<div class="lifecycle">
-								<h3>Change the dose</h3>
+								<h3>{$t.setup.changeDoseTitle}</h3>
 								<p class="muted">
-									Enter what you will actually take. The total is worked out from that, never the
-									other way round, because only your prescriber can decide how a dose should be made
-									up.
+									{$t.setup.changeDoseNote}
 								</p>
 
 								<label class="field">
-									<span>First day of the new dose</span>
+									<span>{$t.setup.firstDayLabel}</span>
 									<input type="date" bind:value={dFrom} />
 								</label>
 
@@ -917,18 +934,18 @@
 									<div class="slot">
 										<div class="row" style="justify-content: space-between">
 											<label class="field" style="margin:0; flex:1">
-												<span>Time</span>
+												<span>{$t.setup.time}</span>
 												<input type="time" bind:value={slot.time} />
 											</label>
 											<button onclick={() => removeSlot(slotIndex)} disabled={dSlots.length === 1}>
-												Remove time
+												{$t.setup.removeTime}
 											</button>
 										</div>
 
 										{#each slot.items as item, itemIndex (itemIndex)}
 											<div class="row">
 												<label class="field" style="margin:0; flex:2">
-													<span>Product</span>
+													<span>{$t.setup.product}</span>
 													<select bind:value={item.productId}>
 														{#each $regimen.products as product (product.id)}
 															<option value={product.id}>
@@ -936,36 +953,36 @@
 																{product.strengthUnit === 'cp'
 																	? ''
 																	: `${product.strength} ${product.strengthUnit}`}
-																{product.retired ? '(retired)' : ''}
+																{product.retired ? $t.setup.retiredParen : ''}
 															</option>
 														{/each}
 													</select>
 												</label>
 												<label class="field" style="margin:0; flex:1">
-													<span>Pills</span>
+													<span>{$t.setup.pills}</span>
 													<input type="number" step="0.5" min="0" bind:value={item.units} />
 												</label>
 												<button
 													onclick={() => removeItem(slotIndex, itemIndex)}
 													disabled={slot.items.length === 1}
-													aria-label="Remove this product">&times;</button
+													aria-label={$t.setup.removeProduct}>&times;</button
 												>
 											</div>
 										{/each}
 
-										<button onclick={() => addItem(slotIndex)}>Add a product here</button>
+										<button onclick={() => addItem(slotIndex)}>{$t.setup.addProductHere}</button>
 									</div>
 								{/each}
 
-								<button onclick={addSlot}>Add another time</button>
+								<button onclick={addSlot}>{$t.setup.addAnotherTime}</button>
 
 								<div class="grid" style="margin-top:0.875rem">
 									<label class="field">
-										<span>What the doctor said (optional)</span>
+										<span>{$t.setup.declaredLabel}</span>
 										<input type="number" step="0.5" min="0" bind:value={dDeclared} />
 									</label>
 									<label class="field">
-										<span>Unit</span>
+										<span>{$t.setup.unit}</span>
 										<select bind:value={dDeclaredUnit}>
 											<option value="mg">mg</option>
 											<option value="g">g</option>
@@ -978,31 +995,34 @@
 										class:stale={declaredMismatch}
 										class:agrees={!declaredMismatch && dDeclared !== ''}
 									>
-										What you entered comes to
-										<strong>{formatNumber(draftTotal.perDay)} {draftTotal.unit} a day</strong>
+										{$t.setup.entryComesTo}
+										<strong>
+											{$t.setup.perDayAmount(formatNumber(draftTotal.perDay), draftTotal.unit)}
+										</strong>
 										{#if dSlots.length > 1}
 											({draftTotal.perSlot.map((v) => formatNumber(v)).join(' + ')})
 										{/if}
 										{#if declaredMismatch}
-											, which does not match the {dDeclared} {dDeclaredUnit} you recorded.
+											{$t.setup.declaredMismatch(String(dDeclared), dDeclaredUnit)}
 										{/if}
 									</p>
 								{/if}
 
 								{#if draftRetired.length > 0}
 									<p class="stale">
-										{draftRetired.map((p) => p.brandName).join(', ')} is retired. Saving this brings it
-										back into use, so it will be scheduled and ordered again.
+										{$t.setup.retiredWarning(
+											draftRetired.map((p) => p.brandName).join(', '),
+											draftRetired.length
+										)}
 									</p>
 								{/if}
 
 								<button class="primary" onclick={() => saveDose(therapy.id)}>
-									Save the new dose
+									{$t.setup.saveNewDose}
 								</button>
 								{#if doseError}<p class="stale">{doseError}</p>{/if}
 								<p class="muted">
-									The dose you are on now stays in your history, ending the day before this one
-									starts. Your calendar reminders will need exporting again afterwards.
+									{$t.setup.changeDoseFooter}
 								</p>
 							</div>
 						{/if}
@@ -1010,27 +1030,24 @@
 						<div class="lifecycle">
 							{#if therapy.stoppedOn}
 								<button onclick={() => setTherapyStopped(therapy.id, undefined)}>
-									Start taking this again
+									{$t.setup.resumeTherapy}
 								</button>
 							{:else}
 								<button onclick={() => setTherapyStopped(therapy.id, $today)}>
-									Stop taking this
+									{$t.setup.stopTherapy}
 								</button>
 								<p class="muted">
-									Stopping ends consumption from today and keeps every dose you have recorded, so
-									what you took and when stays answerable.
+									{$t.setup.stopTherapyNote}
 								</p>
 							{/if}
 
 							{#if usage.canDelete}
 								<button class="danger" onclick={() => removeTherapy(therapy.id)}>
-									Delete permanently
+									{$t.setup.deletePermanently}
 								</button>
 							{:else}
 								<p class="muted">
-									This cannot be deleted: it has been in use since {therapy.startedOn}, and its
-									{usage.doseVersions} recorded {usage.doseVersions === 1 ? 'dose' : 'doses'} are the
-									record of what you took. Stop it instead.
+									{$t.setup.cannotDeleteTherapy(therapy.startedOn, usage.doseVersions)}
 								</p>
 							{/if}
 							{#if therapyError}<p class="stale">{therapyError}</p>{/if}
@@ -1040,33 +1057,32 @@
 			</div>
 		{/each}
 	{:else}
-		<p class="muted">None yet.</p>
+		<p class="muted">{$t.common.none}</p>
 	{/if}
 
 	<details>
-		<summary>Add a therapy</summary>
-		<label class="field"><span>Name</span><input bind:value={tName} /></label>
-		<label class="field"><span>Category</span><input bind:value={tCategory} /></label>
+		<summary>{$t.setup.addTherapy}</summary>
+		<label class="field"><span>{$t.setup.name}</span><input bind:value={tName} /></label>
+		<label class="field"><span>{$t.setup.category}</span><input bind:value={tCategory} /></label>
 		<label class="row" style="margin-bottom:0.625rem">
 			<input type="checkbox" bind:checked={tPrn} style="width:auto;min-height:auto" />
-			<span>As needed (no schedule)</span>
+			<span>{$t.setup.asNeededCheckbox}</span>
 		</label>
 
 		{#if !tPrn}
 			<label class="field">
-				<span>Times, comma separated</span>
+				<span>{$t.setup.timesCommaLabel}</span>
 				<input bind:value={tTimes} placeholder={defaultTimes.join(', ')} />
 			</label>
 
 			<p class="muted">
-				What to take at each of those times. A dose can combine products: 14 mg of the morning dose
-				is 3 × 4 mg plus 1 × 2 mg.
+				{$t.setup.addTherapyDoseNote}
 			</p>
 
 			{#each tItems as item, index (index)}
 				<div class="grid">
 					<label class="field">
-						<span>Product</span>
+						<span>{$t.setup.product}</span>
 						<select bind:value={item.productId}>
 							{#each $regimen?.products ?? [] as product (product.id)}
 								<option value={product.id}>
@@ -1077,7 +1093,7 @@
 						</select>
 					</label>
 					<label class="field">
-						<span>Pills per time</span>
+						<span>{$t.setup.pillsPerTime}</span>
 						<input type="number" step="0.5" min="0" bind:value={item.units} />
 					</label>
 				</div>
@@ -1087,29 +1103,27 @@
 				onclick={() =>
 					(tItems = [...tItems, { productId: $regimen?.products[0]?.id ?? '', units: 1 }])}
 			>
-				Add a product to this dose
+				{$t.setup.addProductToDose}
 			</button>
 			<p class="muted">
-				The same combination is used at every time listed. For different morning and evening doses,
-				add it here and then use <strong>Change the dose</strong> above, which edits each time separately.
+				{$t.setup.sameCombinationNote($t.setup.changeDoseTitle)}
 			</p>
 		{/if}
 
-		<button class="primary" onclick={addTherapy}>Add therapy</button>
+		<button class="primary" onclick={addTherapy}>{$t.setup.addTherapyButton}</button>
 		{#if therapyFormError}<p class="stale">{therapyFormError}</p>{/if}
 	</details>
 </div>
 
 <div class="card">
-	<h3>Your data</h3>
+	<h3>{$t.setup.dataTitle}</h3>
 	<p class="muted">
-		Everything is stored on this device. Clearing your browser data will delete it, so keep a
-		backup.
+		{$t.setup.dataNote}
 	</p>
 	<div class="row">
-		<button onclick={doExport}>Export backup (JSON)</button>
+		<button onclick={doExport}>{$t.setup.exportBackup}</button>
 		<label class="import">
-			<span>Import backup</span>
+			<span>{$t.setup.importBackup}</span>
 			<input type="file" accept="application/json" onchange={doImport} />
 		</label>
 	</div>
@@ -1121,11 +1135,7 @@
 	{/if}
 	{#if importWarnings.length > 0}
 		<div class="stale">
-			<strong
-				>Restored, with {importWarnings.length} problem{importWarnings.length === 1
-					? ''
-					: 's'}:</strong
-			>
+			<strong>{$t.setup.restoredWithProblems(importWarnings.length)}</strong>
 			<ul>
 				{#each importWarnings as warning, index (index)}
 					<li>{warning}</li>
@@ -1136,12 +1146,12 @@
 </div>
 
 <div class="card">
-	<h3>Danger</h3>
+	<h3>{$t.setup.dangerTitle}</h3>
 	<button class="danger" onclick={deleteEverything} disabled={deleteState === 'working'}>
-		{deleteState === 'working' ? 'Deleting…' : 'Delete all data'}
+		{deleteState === 'working' ? $t.setup.deleting : $t.setup.deleteAll}
 	</button>
 	{#if deleteState === 'done'}
-		<p role="status">Everything on this device has been deleted.</p>
+		<p role="status">{$t.setup.deleteDone}</p>
 	{/if}
 	{#if deleteError}
 		<p class="stale">{deleteError}</p>

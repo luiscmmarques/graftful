@@ -1,78 +1,73 @@
 <script lang="ts">
 	// The point of this page is the DevTools paragraph. Everything else is a promise;
 	// that one is a test the reader can run.
+	import { EMAIL, generalMailUrl } from '$lib/contact';
+	import { t } from '$lib/i18n';
 </script>
 
 <svelte:head>
-	<title>Privacy · Graftful</title>
-	<meta name="description" content="What Graftful stores, where it stores it, and how to check." />
+	<title>{$t.privacy.title} · Graftful</title>
+	<meta name="description" content={$t.privacy.metaDescription} />
 </svelte:head>
 
-<h2>Privacy</h2>
+<h2>{$t.privacy.title}</h2>
 
 <div class="card">
-	<p><strong>Your medication data never leaves your device.</strong></p>
+	<p><strong>{$t.privacy.headline}</strong></p>
 	<p class="muted">
-		There is no account, no sign-in, and no server holding your regimen. Everything you enter
-		(products, doses, stock counts, orders, your transplant date) is stored by your browser on the
-		device you are using, and nowhere else.
+		{$t.privacy.headlineBody}
 	</p>
 </div>
 
 <div class="card">
-	<h3>How to check, rather than take my word for it</h3>
+	<h3>{$t.privacy.checkTitle}</h3>
 	<p class="muted">
-		Open your browser's developer tools, go to the Network tab, and then use the app: add a product,
-		record a stock count, generate an order. Nothing will be sent. This is worth more than any
-		privacy policy, because you are watching the actual behaviour rather than reading a claim about
-		it.
+		{$t.privacy.checkBody}
 	</p>
 </div>
 
 <div class="card">
-	<h3>The one thing that is collected</h3>
+	<h3>{$t.privacy.collectedTitle}</h3>
 	<p class="muted">
-		Page views, through Cloudflare Web Analytics. It records that a page was opened, roughly which
-		country from the request, and which page. It sets no cookies, does not fingerprint your browser,
-		and cannot see anything you typed. I use it to know whether anyone is finding the app at all.
+		{$t.privacy.collected}
 	</p>
 	<p class="muted">
-		It is a single script from Cloudflare. If you block it, the app works exactly the same.
+		{$t.privacy.collectedBlockable}
 	</p>
 </div>
 
 <div class="card">
-	<h3>What this means in practice</h3>
+	<h3>{$t.privacy.practiceTitle}</h3>
 	<ul>
 		<li>
-			<strong>Clearing your browser data will delete your regimen.</strong> This is the real risk of storing
-			everything locally, and it is why the app has an export button. Use it.
+			<strong>{$t.privacy.clearingLead}</strong>
+			{$t.privacy.clearingBody}
 		</li>
 		<li>
-			<strong>Your data does not follow you between devices.</strong> Phone and laptop hold separate copies.
-			Export from one and import into the other.
+			<strong>{$t.privacy.devicesLead}</strong>
+			{$t.privacy.devicesBody}
 		</li>
 		<li>
-			<strong>Anyone who can unlock your device can read it.</strong> There is no separate app passcode.
-			Your device lock is the protection.
+			<strong>{$t.privacy.unlockLead}</strong>
+			{$t.privacy.unlockBody}
 		</li>
 		<li>
-			<strong>Nothing is backed up for you.</strong> I cannot recover your data, because I never had it.
+			<strong>{$t.privacy.noBackupLead}</strong>
+			{$t.privacy.noBackupBody}
 		</li>
 	</ul>
 </div>
 
 <div class="card">
-	<h3>Deleting everything</h3>
+	<h3>{$t.privacy.deletingTitle}</h3>
 	<p class="muted">
-		Setup has a button that erases all of it immediately. There is nothing to request, and no
-		account to close.
+		{$t.privacy.deletingBody}
 	</p>
 	<p class="muted">
-		Because I hold no personal data, there is no copy to request and nothing for me to delete
-		remotely. That is by design: the safest way to handle sensitive health data is not to receive
-		it. Questions about this privacy model can go to
-		<a href="mailto:hi@graftful.app">hi@graftful.app</a>.
+		{$t.privacy.deletingNoCopy}
+		{$t.privacy.deletingContact}
+		<!-- The full stop stays in the markup: it is the same character in every language. -->
+		<a href={generalMailUrl}>{EMAIL.general}</a>.
 	</p>
 </div>
 
