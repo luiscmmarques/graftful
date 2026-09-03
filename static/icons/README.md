@@ -67,12 +67,24 @@ for that reason.
 
 ## What else is generated
 
-`splash/` holds the iOS launch images, one per device size and orientation. Safari ignores
+`splash/` holds the iOS launch images. Safari ignores
 the manifest's `background_color` when launching from the home screen, so without these there
 is a white flash on every cold start. There is no scaling and no fallback — each device needs
 its exact pixel size and its own media query — which is why the device list lives in
 `scripts/generate-icons.mjs` and the `<link>` tags in `src/app.html` are rewritten from it
 between the `ios-splash` markers. Edit the list, never the tags.
+
+There is one image per device size, and both orientations only for the iPads: an iPhone always
+launches a home-screen web app in portrait, so an iPhone landscape tag can never match and only
+costs bytes in every shell. The reasoning is beside the orientation lists in the generator. The
+generator writes and never deletes, so narrowing the list means deleting the orphaned PNGs by
+hand.
+
+One thing to expect when rerunning it: the launch images are not byte-reproducible. Each run
+leaves two or three of them a few bytes different — a different two or three each time — with
+identical dimensions and identical artwork, which is Chromium's PNG encoder rather than a change
+worth committing. Revert those with `git checkout` so the diff shows only what was meant, and
+note that a path-level checkout also restores anything deleted in the same directory.
 
 `static/lockup.png` and `lockup-inverse.png` are the mark beside the name, for places that
 cannot style CSS: the GitHub README, printed handouts. In the app itself the header uses

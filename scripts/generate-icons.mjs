@@ -88,20 +88,39 @@ console.log('og-image.png  1200x630');
  * Every device needs its own exact pixel size and its own media query; there is no scaling
  * and no fallback. That is why this list exists and why the markup is generated from it
  * rather than typed: the images and the `<link>` tags cannot be allowed to disagree.
+ *
+ * Each device declares which orientations it can launch in, and that is the interesting
+ * decision here.
+ *
+ * An iPhone launches a home-screen web app in **portrait**, whatever way the phone is being
+ * held — iOS does not honour a landscape launch there. So an iPhone landscape media query can
+ * never match at the moment a launch image is chosen, and its image is never drawn. Those tags
+ * were pure weight: eight of them in every prerendered shell, and because HTML is served
+ * `no-transform` to stop Cloudflare injecting a script (see `static/_headers` and
+ * `DECISIONS.md`) nothing compresses them, so the full cost is paid on the wire.
+ *
+ * iPads do launch in either orientation, and keep both.
+ *
+ * Every device *size* stays. The audience skews older, so an iPhone X or an SE is a phone
+ * somebody is using today rather than a legacy size worth dropping — the saving here comes
+ * from removing tags that cannot fire, not from narrowing which devices are covered.
  */
+const BOTH = ['portrait', 'landscape'];
+const PORTRAIT_ONLY = ['portrait'];
+
 const DEVICES = [
-	[1024, 1366, 2, 'ipad-pro-12'],
-	[834, 1194, 2, 'ipad-pro-11'],
-	[820, 1180, 2, 'ipad-air'],
-	[768, 1024, 2, 'ipad'],
-	[440, 956, 3, 'iphone-16-pro-max'],
-	[430, 932, 3, 'iphone-15-pro-max'],
-	[428, 926, 3, 'iphone-14-plus'],
-	[402, 874, 3, 'iphone-16-pro'],
-	[393, 852, 3, 'iphone-15'],
-	[390, 844, 3, 'iphone-14'],
-	[375, 812, 3, 'iphone-x'],
-	[375, 667, 2, 'iphone-se']
+	[1024, 1366, 2, 'ipad-pro-12', BOTH],
+	[834, 1194, 2, 'ipad-pro-11', BOTH],
+	[820, 1180, 2, 'ipad-air', BOTH],
+	[768, 1024, 2, 'ipad', BOTH],
+	[440, 956, 3, 'iphone-16-pro-max', PORTRAIT_ONLY],
+	[430, 932, 3, 'iphone-15-pro-max', PORTRAIT_ONLY],
+	[428, 926, 3, 'iphone-14-plus', PORTRAIT_ONLY],
+	[402, 874, 3, 'iphone-16-pro', PORTRAIT_ONLY],
+	[393, 852, 3, 'iphone-15', PORTRAIT_ONLY],
+	[390, 844, 3, 'iphone-14', PORTRAIT_ONLY],
+	[375, 812, 3, 'iphone-x', PORTRAIT_ONLY],
+	[375, 667, 2, 'iphone-se', PORTRAIT_ONLY]
 ];
 
 const splashDir = join(icons, 'splash');
@@ -124,11 +143,9 @@ const splashPage = (w, h) => {
 };
 
 const links = [];
-for (const [cw, ch, dpr, label] of DEVICES) {
-	for (const [w, h, orientation] of [
-		[cw, ch, 'portrait'],
-		[ch, cw, 'landscape']
-	]) {
+for (const [cw, ch, dpr, label, orientations] of DEVICES) {
+	for (const orientation of orientations) {
+		const [w, h] = orientation === 'portrait' ? [cw, ch] : [ch, cw];
 		const file = `splash-${label}-${orientation}.png`;
 		const page = await browser.newPage({
 			viewport: { width: w, height: h },
@@ -146,7 +163,11 @@ for (const [cw, ch, dpr, label] of DEVICES) {
 		);
 	}
 }
-console.log(`${DEVICES.length * 2} splash images`);
+/*
+ * This writes; it never deletes. Narrowing the list above leaves the old PNGs in place, where
+ * they ship as unreferenced payload — so remove them by hand in the same change.
+ */
+console.log(`${links.length} splash images`);
 
 /*
  * Rewrite the launch-image markup in place, between markers, so the list above stays the
