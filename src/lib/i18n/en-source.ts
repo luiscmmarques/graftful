@@ -253,6 +253,8 @@ export const en: Messages = {
 		dataTitle: 'Your data',
 		dataNote:
 			'Everything is stored on this device. Clearing your browser data will delete it, so keep a backup.',
+		storageNotGuaranteed:
+			'This browser has not guaranteed that the data here is permanent, so it could be removed if the device runs short of space. Exporting a backup from time to time is the protection against that.',
 		exportBackup: 'Export backup (JSON)',
 		importBackup: 'Import backup',
 		errorNothingToExport: 'Nothing to export yet — there is no regimen on this device.',

@@ -5,6 +5,7 @@
 	import { elapsedSince, type Milestone, upcomingMilestones } from '$lib/domain/anniversary';
 	import { today } from '$lib/lifecycle';
 	import { t } from '$lib/i18n';
+	import { watchStoredData } from '$lib/persistence';
 	import { registerServiceWorker } from '$lib/registerServiceWorker';
 	import { onMount } from 'svelte';
 
@@ -14,6 +15,12 @@
 	onMount(() => {
 		void registerServiceWorker();
 	});
+
+	/*
+	 * Ask the browser not to evict the database — but only once it holds a regimen, since
+	 * on Firefox the request is a permission prompt. See src/lib/persistence.ts.
+	 */
+	onMount(() => watchStoredData());
 
 	const elapsed = $derived.by(() => {
 		const tx = $regimen?.settings.transplantDate;

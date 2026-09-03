@@ -25,6 +25,7 @@
 	import type { DoseVersion, Product, RegimenState, Therapy, Unit } from '$lib/domain/types';
 	import { downloadFile, formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
+	import { persistence } from '$lib/persistence';
 	import { browserLocale, locale, LOCALES } from '$lib/locale';
 	import { t } from '$lib/i18n';
 	import type { Locale } from '$lib/domain/locale';
@@ -1120,6 +1121,16 @@
 	<p class="muted">
 		{$t.setup.dataNote}
 	</p>
+	{#if $persistence === 'refused'}
+		<!--
+			Only for a refusal. A granted origin gets nothing — there is no reason to
+			congratulate anyone about storage — and neither does a browser without the API,
+			where the notice would describe a risk with no action attached to it.
+		-->
+		<p class="muted">
+			{$t.setup.storageNotGuaranteed}
+		</p>
+	{/if}
 	<div class="row">
 		<button onclick={doExport}>{$t.setup.exportBackup}</button>
 		<label class="import">

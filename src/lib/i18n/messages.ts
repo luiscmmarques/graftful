@@ -252,6 +252,14 @@ export interface Messages {
 
 		dataTitle: string;
 		dataNote: string;
+		/**
+		 * Shown only when the browser has declined to make storage persistent.
+		 *
+		 * Descriptive, not an alarm: it names a real risk the user can act on, and the action
+		 * is the export button directly beneath it. Nothing is shown when persistence is
+		 * granted or when the browser has no Storage API — see `src/lib/persistence.ts`.
+		 */
+		storageNotGuaranteed: string;
 		exportBackup: string;
 		importBackup: string;
 		errorNothingToExport: string;

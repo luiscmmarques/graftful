@@ -208,6 +208,63 @@ test('an empty device refuses to produce a backup rather than a worthless file',
 	expect(downloads).toEqual([]);
 });
 
+/*
+ * Durable storage.
+ *
+ * The request itself cannot be asserted here — Chromium grants persistence to a localhost
+ * origin without asking, so the refusal path never occurs naturally. `navigator.storage` is
+ * therefore stubbed before any app code runs. What is being tested is not the browser's
+ * decision but ours: that a refusal reaches the user next to the export button, and that a
+ * grant says nothing at all.
+ */
+async function stubPersistence(page: import('@playwright/test').Page, granted: boolean) {
+	await page.addInitScript((allow) => {
+		Object.defineProperty(navigator, 'storage', {
+			configurable: true,
+			value: {
+				persisted: () => Promise.resolve(false),
+				persist: () => Promise.resolve(allow)
+			}
+		});
+	}, granted);
+}
+
+const storageWarning = /has not guaranteed that the data here is permanent/;
+
+test('a refused storage guarantee is reported beside the backup button', async ({ page }) => {
+	await stubPersistence(page, false);
+
+	/*
+	 * Nothing is said on an empty device, because nothing has been asked yet: on Firefox
+	 * `persist()` is a permission prompt, and putting it to somebody who has just scanned a QR
+	 * code and entered nothing spends the one chance to ask on protecting no data.
+	 */
+	await page.goto('/setup');
+	await expect(page.getByRole('heading', { name: 'Your data' })).toBeVisible();
+	await expect(page.getByText(storageWarning)).toHaveCount(0);
+
+	// Loading the example gives the database something to lose, which is the trigger.
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Load example regimen' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+
+	await page.goto('/setup');
+	await expect(page.getByText(storageWarning)).toBeVisible();
+});
+
+test('a granted storage guarantee is not announced', async ({ page }) => {
+	await stubPersistence(page, true);
+
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Load example regimen' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+
+	await page.goto('/setup');
+	await expect(page.getByRole('heading', { name: 'Your data' })).toBeVisible();
+	// There is no reason to congratulate anyone about storage.
+	await expect(page.getByText(storageWarning)).toHaveCount(0);
+});
+
 test('recounting to zero on a day that already has an entry actually takes effect', async ({
 	page
 }) => {

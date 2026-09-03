@@ -278,6 +278,8 @@ export const de: Messages = {
 		dataTitle: 'Ihre Daten',
 		dataNote:
 			'Alles wird auf diesem Gerät gespeichert. Das Löschen Ihrer Browserdaten löscht es mit, bewahren Sie also eine Sicherung auf.',
+		storageNotGuaranteed:
+			'Dieser Browser garantiert nicht, dass die hier gespeicherten Daten dauerhaft sind; sie könnten entfernt werden, wenn der Speicherplatz auf dem Gerät knapp wird. Der Schutz dagegen ist, von Zeit zu Zeit eine Sicherung zu exportieren.',
 		exportBackup: 'Sicherung exportieren (JSON)',
 		importBackup: 'Sicherung importieren',
 		errorNothingToExport:

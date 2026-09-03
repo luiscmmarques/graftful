@@ -272,6 +272,8 @@ export const pt: Messages = {
 		dataTitle: 'Os seus dados',
 		dataNote:
 			'Tudo é guardado neste dispositivo. Apagar os dados do navegador apaga-os, por isso guarde uma cópia de segurança.',
+		storageNotGuaranteed:
+			'Este navegador não garante que os dados guardados aqui sejam permanentes; podem ser removidos se o dispositivo ficar sem espaço. A proteção contra isso é exportar uma cópia de segurança de vez em quando.',
 		exportBackup: 'Exportar cópia de segurança (JSON)',
 		importBackup: 'Importar cópia de segurança',
 		errorNothingToExport:

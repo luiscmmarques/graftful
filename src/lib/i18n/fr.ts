@@ -274,6 +274,8 @@ export const fr: Messages = {
 		dataTitle: 'Vos données',
 		dataNote:
 			'Tout est enregistré sur cet appareil. Effacer les données de votre navigateur les supprimera : conservez une sauvegarde.',
+		storageNotGuaranteed:
+			'Ce navigateur ne garantit pas que les données enregistrées ici soient permanentes : elles pourraient être supprimées si l’appareil manque d’espace. Exporter une sauvegarde de temps en temps est la protection contre cela.',
 		exportBackup: 'Exporter une sauvegarde (JSON)',
 		importBackup: 'Importer une sauvegarde',
 		errorNothingToExport:
