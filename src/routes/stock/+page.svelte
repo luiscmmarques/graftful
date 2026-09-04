@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { addStockEvent, regimen, setPackageSize } from '$lib/db';
-	import { productStatuses } from '$lib/domain/procurement';
+	import { productStatuses, stockLevel } from '$lib/domain/procurement';
+	import StockLight from '$lib/StockLight.svelte';
 	import { formatDays, formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
 	import { LIMITS, normaliseNumber } from '$lib/domain/validate';
@@ -11,7 +12,10 @@
 		const byId = new Map($regimen.products.map((p) => [p.id, p]));
 
 		return productStatuses($regimen, $today)
-			.map((status) => ({ status, product: byId.get(status.productId)! }))
+			.map((status) => {
+				const product = byId.get(status.productId)!;
+				return { status, product, level: stockLevel(status, product.minDays) };
+			})
 			.sort((a, b) => {
 				// Nothing consuming it sinks to the bottom; otherwise most urgent first.
 				const left = a.status.daysRemaining ?? Number.POSITIVE_INFINITY;
@@ -83,7 +87,7 @@
 {:else if rows.length === 0}
 	<p class="muted">{$t.stock.empty}</p>
 {:else}
-	{#each rows as { status, product } (product.id)}
+	{#each rows as { status, product, level } (product.id)}
 		<div class="card">
 			<div class="row" style="justify-content: space-between">
 				<div>
@@ -93,15 +97,20 @@
 						{/if}{$t.stock.perBox(product.packageSize)}
 					</div>
 				</div>
-				<div style="text-align:right">
+				<div class="figures">
+					<!--
+						The null check stays first, rather than testing `level === 'none'`, because it
+						is what narrows `daysRemaining` for the branches below. The two are
+						equivalent by construction — `stockLevel` returns 'none' exactly here.
+					-->
 					{#if status.daysRemaining === null}
 						<span class="badge">{$t.common.notInUse}</span>
-					{:else if status.mustOrder}
+					{:else if level === 'order'}
 						<span class="badge alert">
 							{$t.stock.orderNow} · {formatDays(status.daysRemaining)}
 							{$t.common.days}
 						</span>
-					{:else if status.daysRemaining < product.minDays * 4}
+					{:else if level === 'low'}
 						<span class="badge warn">
 							{$t.stock.runningLow} · {formatDays(status.daysRemaining)}
 							{$t.common.days}
@@ -125,6 +134,7 @@
 			</p>
 
 			<div class="row" style="margin-top:0.625rem">
+				<StockLight {level} />
 				<button onclick={() => toggle(product.id, status.onHand, product.packageSize)}>
 					{openFor === product.id ? $t.common.close : $t.stock.openActions}
 				</button>
@@ -172,6 +182,29 @@
 {/if}
 
 <style>
+	/*
+	 * The badge column, and why it carries `margin-left: auto`.
+	 *
+	 * The header is a wrapping flex row with `space-between`. When the badge is too wide to
+	 * sit beside the product name the column wraps to its own line — and `space-between`
+	 * puts a *lone* item on a line at flex-start, so the column silently lost its right
+	 * alignment: the badge jumped to the left margin while "N left" stayed right-aligned
+	 * inside it, which reads as a broken card rather than a wrapped one.
+	 *
+	 * `margin-left: auto` absorbs the free space instead, so the column is right-aligned
+	 * whether it wrapped or not. On a single line the result is identical to what
+	 * `space-between` already did, which is why this is safe to add unconditionally.
+	 *
+	 * Only French showed it, because only French is long enough: "commander maintenant ·
+	 * 1 jours" wraps where "bientôt épuisé · 10 jours" does not, and English never does.
+	 * A layout that depends on the label being short is a layout that breaks in the next
+	 * language, so the fix is here rather than in the copy.
+	 */
+	.figures {
+		text-align: right;
+		margin-left: auto;
+	}
+
 	.stock-error {
 		background: var(--warn-soft);
 		color: var(--warn);

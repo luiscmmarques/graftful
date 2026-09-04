@@ -44,6 +44,16 @@ export interface Messages {
 		close: string;
 		none: string;
 		notInUse: string;
+		/**
+		 * The cover indicator's accessible name, wrapping its state as "Stock: running low".
+		 *
+		 * A function rather than a bare prefix joined to the state with a hardcoded ": " in
+		 * the component, because the separator is not the same in every language — French
+		 * takes a space before the colon, as the prose in that catalogue already does.
+		 */
+		stockLabelled: (state: string) => string;
+		/** The healthy band of the cover indicator. Read after the label, so no "stock" in it. */
+		stockEnough: string;
 		days: string;
 		save: string;
 		edit: string;
@@ -76,6 +86,13 @@ export interface Messages {
 		perDay: (units: string) => string;
 		nothingConsumes: string;
 		onOrder: (units: string) => string;
+		/**
+		 * Label for the button that opens refill / recount / box size.
+		 *
+		 * Deliberately short. It listed all three actions, which made the widest control on
+		 * the busiest screen wrap on a phone; the panel it opens names them anyway, and the
+		 * cover indicator now sits beside it and needs the room.
+		 */
 		openActions: string;
 		refillLabel: (size: number) => string;
 		addUnits: (units: number) => string;

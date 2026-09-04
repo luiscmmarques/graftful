@@ -9,7 +9,7 @@ Read `DECISIONS.md` before proposing a feature. It records what was rejected and
 ```sh
 npm install
 npm run dev        # localhost:5173. Service worker is OFF in dev, on purpose.
-npm test           # Vitest, 133 tests
+npm test           # Vitest, 144 tests
 npm run check      # svelte-check. Must be 0 errors AND 0 warnings.
 npm run lint       # Prettier check
 npm run format     # Prettier write

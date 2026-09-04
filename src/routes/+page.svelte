@@ -2,7 +2,8 @@
 	import { regimen, replaceAll } from '$lib/db';
 	import { exampleRegimen } from '$lib/domain/seed';
 	import { pillsPerDay, prnTherapies, scheduleForDay } from '$lib/domain/schedule';
-	import { productStatuses } from '$lib/domain/procurement';
+	import { productStatuses, stockLevel, type StockLevel } from '$lib/domain/procurement';
+	import StockLight from '$lib/StockLight.svelte';
 	import { formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
 	import { t } from '$lib/i18n';
@@ -12,9 +13,34 @@
 	const prn = $derived($regimen ? prnTherapies($regimen, $today) : []);
 	const pills = $derived($regimen ? pillsPerDay($regimen, $today) : 0);
 
-	const lowCount = $derived(
-		$regimen ? productStatuses($regimen, $today).filter((s) => s.mustOrder).length : 0
-	);
+	// Computed once and shared: the reorder count and the per-entry indicator ask the
+	// same question of the same numbers, and calling it twice invites them to diverge.
+	const statuses = $derived($regimen ? productStatuses($regimen, $today) : []);
+	const lowCount = $derived(statuses.filter((s) => s.mustOrder).length);
+
+	const levels = $derived.by(() => {
+		const floors = new Map(($regimen?.products ?? []).map((p) => [p.id, p.minDays]));
+		return new Map(statuses.map((s) => [s.productId, stockLevel(s, floors.get(s.productId) ?? 0)]));
+	});
+
+	/*
+	 * A dose is only as covered as its scarcest product.
+	 *
+	 * A therapy taken as three capsules is not fine because two of them are, so the entry
+	 * shows the worst band among the products it actually consumes rather than an average —
+	 * averaging would hide the one box that is about to run out, which is the only thing
+	 * this indicator exists to surface.
+	 */
+	const RANK: Record<StockLevel, number> = { none: 0, ok: 1, low: 2, order: 3 };
+
+	function worstLevel(productIds: string[]): StockLevel {
+		let worst: StockLevel = 'none';
+		for (const productId of productIds) {
+			const level = levels.get(productId) ?? 'none';
+			if (RANK[level] > RANK[worst]) worst = level;
+		}
+		return worst;
+	}
 
 	async function loadExample() {
 		await replaceAll(exampleRegimen({ stockAsOf: $today }));
@@ -54,7 +80,10 @@
 			{#each slot.entries as entry (entry.therapyId)}
 				<div class="entry">
 					<div class="row" style="justify-content: space-between">
-						<strong>{entry.therapyName}</strong>
+						<span class="row">
+							<strong>{entry.therapyName}</strong>
+							<StockLight level={worstLevel(entry.items.map((item) => item.productId))} />
+						</span>
 						{#if entry.totalAmount !== null}
 							<span class="badge">{formatNumber(entry.totalAmount)} {entry.totalUnit}</span>
 						{/if}

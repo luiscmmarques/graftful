@@ -44,6 +44,38 @@ export function productStatuses(state: RegimenState, asOf: string): ProductStatu
 	});
 }
 
+/** Cover bands, for the at-a-glance indicator on Stock and Today. */
+export type StockLevel = 'none' | 'ok' | 'low' | 'order';
+
+/**
+ * How urgent a product's cover is, in four bands.
+ *
+ * This lived inline in the Stock template, where Today could not reach it and no test
+ * covered it. Two screens sharing a threshold by copying it is how the two screens end
+ * up disagreeing, and a disagreement here is one screen calling a product fine while
+ * the other calls it low.
+ *
+ * The `× 4` is a warning runway, not a clinical judgement — it decides when the app
+ * starts saying "running low", nothing about the medication. At the default floor of
+ * three days that puts the warning eleven days out, so there is about a week to notice
+ * before the order alert fires.
+ *
+ * `none` is its own band rather than folded into `ok`. A retired product holding
+ * residual stock has no burn rate and therefore no cover to report; showing it as
+ * healthy would claim something the numbers do not say. The existing badge gets away
+ * with sharing a colour there because it also carries the words "not in use" — an
+ * indicator with no words does not, which is why the band has to exist separately.
+ *
+ * Note an open order suppresses `order` via `mustOrder`, so a product at zero days with
+ * something already requested reads as `low`. That is the same suppression the badge has
+ * always had, kept deliberately: see the comment in `productStatuses`.
+ */
+export function stockLevel(status: ProductStatus, minDays: number): StockLevel {
+	if (status.daysRemaining === null) return 'none';
+	if (status.mustOrder) return 'order';
+	return status.daysRemaining < minDays * 4 ? 'low' : 'ok';
+}
+
 /**
  * Plan an order.
  *

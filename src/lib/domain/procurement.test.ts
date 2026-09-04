@@ -1,14 +1,15 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
-import type { RegimenState } from './types.ts';
+import type { ProductStatus, RegimenState } from './types.ts';
 import {
 	planOrder,
 	productStatuses,
 	projectNextOrder,
 	receiveOrder,
 	productUsage,
-	recountStock
+	recountStock,
+	stockLevel
 } from './procurement.ts';
 import { stockOnHand } from './stock.ts';
 import { exampleRegimen, SHEET_JOURS, SNAPSHOT } from './seed.ts';
@@ -279,4 +280,69 @@ test('a product typed in by mistake can be deleted outright', () => {
 
 	const usage = productUsage(state, 'typo');
 	assert.deepEqual(usage, { doseVersions: 0, stockEvents: 0, orderLines: 0, canDelete: true });
+});
+
+/**
+ * The bands, checked on their boundaries rather than in their middles.
+ *
+ * `minDays: 3` is what Setup gives a new product and what every seed product carries, so
+ * `minDays * 4` puts the "running low" edge at 12 days. The boundary is the whole test:
+ * 12 days is comfortable, 11 is not, and an off-by-one there is invisible on screen.
+ */
+test('cover bands switch at the floor and at four times the floor', () => {
+	const status = (daysRemaining: number | null, mustOrder = false): ProductStatus => ({
+		productId: 'p',
+		brandName: 'P',
+		onHand: 10,
+		unitsPerDay: daysRemaining === null ? 0 : 1,
+		daysRemaining,
+		onOrder: 0,
+		hasOpenOrder: false,
+		mustOrder
+	});
+
+	assert.equal(stockLevel(status(null), 3), 'none');
+	assert.equal(stockLevel(status(0, true), 3), 'order');
+	assert.equal(stockLevel(status(3, true), 3), 'order');
+	assert.equal(stockLevel(status(11), 3), 'low');
+	assert.equal(stockLevel(status(12), 3), 'ok');
+	assert.equal(stockLevel(status(600), 3), 'ok');
+});
+
+/**
+ * An outstanding order pulls a product out of `order` even at zero days, because
+ * `mustOrder` is already suppressed by it. Pinned because it reads as a bug from the
+ * indicator alone — the light steps back from red while the cupboard is still empty —
+ * and because it is deliberate: nagging about something already requested is how people
+ * learn to ignore the app. It must land on `low`, never on `ok`.
+ */
+test('an open order steps the light back to low, not to ok', () => {
+	const emptyButOrdered: ProductStatus = {
+		productId: 'p',
+		brandName: 'P',
+		onHand: 0,
+		unitsPerDay: 1,
+		daysRemaining: 0,
+		onOrder: 60,
+		hasOpenOrder: true,
+		mustOrder: false
+	};
+
+	assert.equal(stockLevel(emptyButOrdered, 3), 'low');
+});
+
+/**
+ * Against the real fixture rather than a constructed one. Every figure in `SHEET_JOURS`
+ * is either null or 50-plus days, so at the snapshot the example regimen should show only
+ * `none` and `ok` — no amber, no red. If a light ever appears on the example regimen, one
+ * of the two is wrong and this says which.
+ */
+test('the example regimen shows no warning bands at the snapshot', () => {
+	const state = exampleRegimen();
+	const floors = new Map(state.products.map((p) => [p.id, p.minDays]));
+	const levels = productStatuses(state, SNAPSHOT).map((s) =>
+		stockLevel(s, floors.get(s.productId)!)
+	);
+
+	assert.deepEqual([...new Set(levels)].sort(), ['none', 'ok']);
 });
