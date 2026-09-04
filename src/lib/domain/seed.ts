@@ -88,7 +88,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Alfabine',
 				strength: 4,
 				strengthUnit: 'mg',
-				form: 'capsule',
+				form: 'gélule',
 				packageSize: 50,
 				minDays: 3
 			},
@@ -97,7 +97,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Alfabine',
 				strength: 2,
 				strengthUnit: 'mg',
-				form: 'capsule',
+				form: 'gélule',
 				packageSize: 50,
 				minDays: 3
 			},
@@ -106,7 +106,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Alfabine',
 				strength: 6,
 				strengthUnit: 'mg',
-				form: 'capsule',
+				form: 'gélule',
 				packageSize: 50,
 				minDays: 3,
 				retired: true
@@ -119,7 +119,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Betacor',
 				strength: 400,
 				strengthUnit: 'mg',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 150,
 				minDays: 3
 			},
@@ -128,7 +128,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Betacor',
 				strength: 200,
 				strengthUnit: 'mg',
-				form: 'capsule',
+				form: 'gélule',
 				packageSize: 100,
 				minDays: 3
 			},
@@ -137,7 +137,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Gammaphen',
 				strength: 60,
 				strengthUnit: 'mg',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 100,
 				minDays: 3
 			},
@@ -146,7 +146,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Deltacort',
 				strength: 8,
 				strengthUnit: 'mg',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 100,
 				minDays: 3
 			},
@@ -155,7 +155,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Epsilonapril',
 				strength: 30,
 				strengthUnit: 'mg',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 100,
 				minDays: 3
 			},
@@ -164,7 +164,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Zetacal Forte',
 				strength: 2,
 				strengthUnit: 'g',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 90,
 				minDays: 3
 			},
@@ -173,7 +173,7 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Zetacal Forte',
 				strength: 1,
 				strengthUnit: 'g',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 30,
 				minDays: 3,
 				retired: true
@@ -183,65 +183,79 @@ export function exampleRegimen(options: { stockAsOf?: string } = {}): RegimenSta
 				brandName: 'Etalgan',
 				strength: 2,
 				strengthUnit: 'g',
-				form: 'tablet',
+				form: 'comprimé',
 				packageSize: 100,
 				minDays: 3
 			}
 		],
 
+		/*
+		 * Labels in French, and deliberately not clinical.
+		 *
+		 * "Maintenance A/B/C" and "Support A/B" were what the real clinical classes were
+		 * replaced with when this fixture was anonymised, and they read exactly like what
+		 * they are: placeholders. Someone evaluating the app sees obviously fake data on the
+		 * first screen, which is the wrong first impression for the audience this is aimed at.
+		 *
+		 * What a person actually writes here is the name on the box, so the therapy name is
+		 * just that. The category is how they group their own doses, not how a pharmacologist
+		 * would: `Traitement de fond` covers everything taken every day whatever it is for,
+		 * which is both what someone would write and — the reason it matters — free of any
+		 * class information. Do not "improve" these back into real classes. Strengths and
+		 * counts are still real, so `Anti-Rejet` beside them is enough for a clinician to
+		 * name the molecule, which is precisely what the anonymisation removed.
+		 *
+		 * `activeIngredient` is gone rather than translated: it held `'gamma'` and
+		 * `'epsilon'`, which were artefacts of the same pass, and the field is optional and
+		 * display-only. An invented INN would be worse — the suffix is the class.
+		 */
 		therapies: [
 			{
 				id: 'therapy-alfa',
-				name: 'Alfabine (maintenance)',
-				activeIngredient: 'Alfabine',
-				category: 'Maintenance A',
+				name: 'Alfabine',
+				category: 'Traitement de fond',
 				isPrn: false,
 				startedOn: '2016-05-28'
 			},
 			{
 				id: 'therapy-beta',
-				name: 'Betacor (maintenance)',
-				activeIngredient: 'Betacor',
-				category: 'Maintenance B',
+				name: 'Betacor',
+				category: 'Traitement de fond',
 				isPrn: false,
 				startedOn: '2016-03-17'
 			},
 			{
 				id: 'therapy-gamma',
-				name: 'Gammaphen (support)',
-				activeIngredient: 'gamma',
-				category: 'Support A',
+				name: 'Gammaphen',
+				category: 'Traitement de fond',
 				isPrn: false,
 				startedOn: '2016-03-17'
 			},
 			{
 				id: 'therapy-delta',
-				name: 'Deltacort (maintenance)',
-				activeIngredient: 'Deltacort',
-				category: 'Maintenance C',
+				name: 'Deltacort',
+				category: 'Traitement de fond',
 				isPrn: false,
 				startedOn: '2016-03-11'
 			},
 			{
 				id: 'therapy-epsilon',
-				name: 'Epsilonapril (support)',
-				activeIngredient: 'epsilon',
-				category: 'Support B',
+				name: 'Epsilonapril',
+				category: 'Traitement de fond',
 				isPrn: false,
 				startedOn: '2016-07-12'
 			},
 			{
 				id: 'therapy-zeta',
-				name: 'Zetacal (supplement)',
-				category: 'Supplement',
+				name: 'Zetacal',
+				category: 'Complément',
 				isPrn: false,
 				startedOn: '2016-03-17'
 			},
 			{
 				id: 'therapy-eta',
-				name: 'Etalgan (as needed)',
-				activeIngredient: 'Etalgan',
-				category: 'As needed',
+				name: 'Etalgan',
+				category: 'Au besoin',
 				isPrn: true,
 				startedOn: '2016-01-20'
 			}

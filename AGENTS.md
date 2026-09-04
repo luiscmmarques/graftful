@@ -116,6 +116,8 @@ The product names in `src/lib/domain/seed.ts` are invented. The numbers are not:
 
 Do not restore provenance details — hospital, dates, whose regimen it is — to this file or anywhere else public. The invented names hide very little on their own: strengths, counts and categories are enough for a clinician to infer the real drugs, so what keeps the seed non-attributable is the absence of anything tying it to a person.
 
+For the same reason the therapy labels are French but deliberately **not** clinical: `Traitement de fond`, `Complément`, `Au besoin`. They replaced `Maintenance A/B/C`, which read as placeholders. Do not "improve" them into real classes — `Anti-Rejet` next to a real strength and a real pill count is enough to name the molecule, which is exactly what the anonymisation removed.
+
 **Never adjust the seed's numbers to make a test pass.** If a figure disagrees, the code is probably wrong — that is how the missing-depletion bug was found. Two of the three most valuable bugs in this project were caught by the seed disagreeing.
 
 The order text format in `order-text.ts` is likewise validated against a real email sent to a real pharmacy. Do not "improve" the line shape without a reason from a real order.
