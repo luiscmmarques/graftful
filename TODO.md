@@ -49,7 +49,7 @@ AGPL note: the app already ships its code to the browser, so satisfying the sour
 
 ## 0b. Build status
 
-Working and testable: `npm run dev`. 133 unit tests, 14 app and 3 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
+Working and testable: `npm run dev`. 144 unit tests, 14 app and 3 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
 
 - [x] SvelteKit + Svelte 5 + Vite, `adapter-static`, every route prerendered
 - [x] Domain layer at `src/lib/domain`, still dependency-free
@@ -303,6 +303,32 @@ Options:
 - [ ] No account, no sign-up, no email required
 - [ ] Say plainly on the landing page that data stays on the device
 - [ ] Export / import so the user can prove they own their data — and recover it. This is also the mitigation for maintainer risk: with an export, a user is never trapped, whatever happens to the project.
+
+#### Share the backup to the OS, rather than integrating a cloud provider
+
+- [ ] **Offer the backup through the Web Share API** — `navigator.share({ files: [backup] })` hands the file to the OS share sheet, so the user can put it in Drive, iCloud, Files, or anything else installed. Deliberately **not** a Google Drive integration: browser-only OAuth issues a one-hour access token and no refresh token, so it could never back up unattended anyway, and it would cost a Google Cloud project, brand verification, `accounts.google.com` in the CSP, and the rewriting of "the only outbound request the app can make is a cookieless pageview beacon" in five places. The share sheet is the OS, not a third party: no network request leaves the page, so `e2e/app.spec.ts` stays green and the privacy position is untouched. The promise is explicitly _a way out_, not a guaranteed backup — the app cannot know where the file went, and the copy should not imply it does.
+
+  Four things to get right, in the order they will cost time:
+
+  - **Call `share()` under the user gesture.** Safari is strict about transient activation and has historically thrown `NotAllowedError` after an `await`. `doExport` currently awaits `exportJson()`, which reads Dexie. Build the payload synchronously instead — `buildExport` is pure and `$regimen` is already in memory via `liveQuery` — so nothing is awaited between the click and the call.
+  - **Gate on `navigator.canShare({ files })`, not on `navigator.share`.** It returns false when the platform will not accept the type, and `application/json` through the iOS share sheet is the part to verify on a real device. Keep `downloadFile` as the fallback so Firefox and desktop are unaffected and the feature is purely additive.
+  - **Date the filename** — `graftful-backup-YYYY-MM-DD.json`. A downloads folder dedupes with `(1)`; a share target will not, so a fixed name leaves the user unable to tell which copy in Drive is current.
+  - **Reuse the empty-export refusal.** The share path must go through the same guard as `doExport`, or it reintroduces the bug already recorded above: a file with no products is indistinguishable from a real backup and destroys the data it was meant to save.
+
+  Testing note, in the same category as the Playwright/service-worker limitation in §3: no harness can drive a share sheet. Stub `navigator.canShare` and `navigator.share` via `addInitScript` and assert the app calls it with the right filename and MIME type, and that the button is absent when `canShare` is false. The honest test is narrower than the feature, and that is worth stating rather than faking.
+
+- [ ] **Tell the user when the backup no longer matches the regimen.** A `lastBackupFingerprint` in settings, compared against a fingerprint of the current regimen, with a plain notice in Setup's backup card when they diverge. Same mechanism as `lastIcsFingerprint` and the stale-calendar detection in §3 — reuse that shape rather than inventing a second one.
+
+  A fingerprint, **not** a "last backed up" timestamp. A timestamp says "three weeks ago" even when nothing has changed, so it is either wrong or ignored; a fingerprint goes quiet on its own and the notice it produces is specifically true — what you have now differs from what you saved.
+
+  **Hash the structural data only: products, therapies, dose versions. Not stock events, not order lines.** Those change weekly, they are cheap to recount, and including them would leave the notice permanently on — which is the failure already recorded for order alerts, where nagging about something already handled teaches people to ignore the app. The narrowing is not a policy scattered through the UI; it is simply what goes into the hash.
+
+  Three consequences:
+
+  - `lastBackupFingerprint` is a new `Preferences` field, so the checklist in AGENTS.md applies: both directions of `transfer.ts`, validation, the `Record<keyof X, true>` map, and a real value in `FULL_STATE`. It **should** persist — the fingerprint in a backup file describes the state that file contains, so carrying it across means a fresh restore does not immediately demand another backup. Same reasoning `lastIcsFingerprint` already follows.
+  - The notice belongs in Setup, beside the persistence-refused message. **Not on Today**, for the reason already recorded for the survey invitation: that screen is the safety-critical path.
+  - `share()` resolves on hand-off, so success is not observable. Cancelling usually surfaces as `AbortError` — catch that and leave the fingerprint alone, which is better than the `.ics` flow, where the fingerprint is written after triggering a download that is equally unverifiable. Either way say so in a comment, because the bad outcome is the app claiming a backup the user cancelled.
+
 - [ ] Visible version number and changelog
 - [ ] Disclaimer reachable from every page, not buried
 - [ ] No third-party trackers, no ad networks, no CDN-hosted fonts
