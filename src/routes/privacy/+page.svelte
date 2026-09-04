@@ -31,9 +31,6 @@
 	<p class="muted">
 		{$t.privacy.collected}
 	</p>
-	<p class="muted">
-		{$t.privacy.collectedBlockable}
-	</p>
 </div>
 
 <div class="card">

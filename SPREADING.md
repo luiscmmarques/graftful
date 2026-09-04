@@ -71,7 +71,7 @@ The app tags a few entry points so it is possible to tell what is working, witho
 
 These are page views, nothing more — no cookies, no identifiers, no profile. The calendar one exists because a shared calendar entry is a genuinely likely way this spreads, and it would be useful to know that.
 
-One caveat, recorded rather than glossed over: Cloudflare Web Analytics reports pageviews per **path**, and an arbitrary query string may not be broken out. `STACK.md` therefore prefers distinct paths (`/flyer`, `/cto`) over `?src=`. The `?src=` links above are still worth keeping — they are self-explanatory to a human reading a calendar entry a year later — but do not plan on them producing a clean count until the paths exist.
+One caveat, recorded rather than glossed over: there is no analytics beacon at all (see `DECISIONS.md`), so acquisition is read from Cloudflare's edge HTTP traffic, which reports by **path**. An arbitrary query string is not broken out. `STACK.md` therefore prefers distinct paths (`/flyer`, `/cto`) over `?src=`. The `?src=` links above are still worth keeping — they are self-explanatory to a human reading a calendar entry a year later — but do not plan on them producing a clean count until the paths exist.
 
 ## Pace
 

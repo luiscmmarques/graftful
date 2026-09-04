@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import { loadEnv } from 'vite';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
@@ -36,16 +35,6 @@ function buildVersion(): string {
  * every dev page load was requesting a URL that returned 404 — harmless to the app, but it
  * clutters the console and means install metadata cannot be checked without building first.
  */
-/*
- * Read via Vite's own loader rather than `process.env`.
- *
- * `process.env` is not populated from `.env` at the time this config is evaluated — Vite
- * loads those files afterwards — so reading it directly meant a token in `.env` was silently
- * ignored while appearing to work. Real shell variables, which is what Cloudflare Pages and
- * CI provide, still win.
- */
-const publicEnv = loadEnv(process.env.NODE_ENV ?? 'production', process.cwd(), 'PUBLIC_');
-
 const pwaManifest: Partial<ManifestOptions> = {
 	name: 'Graftful',
 	short_name: 'Graftful',
@@ -125,20 +114,7 @@ const pwaManifest: Partial<ManifestOptions> = {
 
 export default defineConfig({
 	define: {
-		__APP_VERSION__: JSON.stringify(buildVersion()),
-		/*
-		 * The analytics token, via `define` rather than `$env/static/public`.
-		 *
-		 * Importing a named export from `$env/static/public` is a hard build error when the
-		 * variable does not exist, and `.env` is deliberately gitignored — so a clean clone,
-		 * CI and Cloudflare Pages all failed to build. Worse, the error surfaced as a missing
-		 * service worker file, because the client build bailed before emitting one, which
-		 * points at entirely the wrong thing.
-		 *
-		 * An absent token now means an empty string, which is exactly the "render nothing"
-		 * case the component already handles.
-		 */
-		__CF_BEACON_TOKEN__: JSON.stringify(publicEnv.PUBLIC_CF_BEACON_TOKEN ?? '')
+		__APP_VERSION__: JSON.stringify(buildVersion())
 	},
 	plugins: [
 		sveltekit({
@@ -201,8 +177,15 @@ export default defineConfig({
 				mode: 'hash',
 				directives: {
 					'default-src': ['self'],
-					'script-src': ['self', 'https://static.cloudflareinsights.com'],
-					'connect-src': ['self', 'https://cloudflareinsights.com'],
+					/*
+					 * No third-party origin is listed, and that is the point: the app loads no
+					 * script and opens no connection it does not serve itself. Cloudflare's
+					 * analytics beacon used to be allowed here — dropping it is what lets the
+					 * privacy note say "nothing leaves the device" with no caveat, and it is
+					 * asserted by the third-party test in `e2e/app.spec.ts`.
+					 */
+					'script-src': ['self'],
+					'connect-src': ['self'],
 					'style-src': ['self', 'unsafe-inline'],
 					'img-src': ['self', 'data:'],
 					'font-src': ['self'],

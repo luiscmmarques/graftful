@@ -351,11 +351,9 @@ export const en: Messages = {
 		checkTitle: 'How to check, rather than take my word for it',
 		checkBody:
 			"Open your browser's developer tools, go to the Network tab, and then use the app: add a product, record a stock count, generate an order. Nothing will be sent. This is worth more than any privacy policy, because you are watching the actual behaviour rather than reading a claim about it.",
-		collectedTitle: 'The one thing that is collected',
+		collectedTitle: 'Nothing is collected',
 		collected:
-			'Page views, through Cloudflare Web Analytics. It records that a page was opened, roughly which country from the request, and which page. It sets no cookies, does not fingerprint your browser, and cannot see anything you typed. I use it to know whether anyone is finding the app at all.',
-		collectedBlockable:
-			'It is a single script from Cloudflare. If you block it, the app works exactly the same.',
+			'No analytics, no visit counter, and no third-party script of any kind. The app loads only files it serves itself, so after the first visit it does not need the network at all. An earlier version counted page views through Cloudflare; that was removed, and nothing replaced it.',
 		practiceTitle: 'What this means in practice',
 		clearingLead: 'Clearing your browser data will delete your regimen.',
 		clearingBody:

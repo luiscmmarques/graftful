@@ -25,11 +25,11 @@ Resolved — see `STACK.md` for the full stack and the reasoning.
 
 ## 0a. v1 scope
 
-**v1 has no server.** A static bundle on Pages plus the Web Analytics beacon. No Worker, no D1, no VAPID, no `api.graftful.app`.
+**v1 has no server, and no telemetry either.** A static bundle on Pages, and nothing else. No Worker, no D1, no VAPID, no `api.graftful.app`, no analytics beacon.
 
 Two consequences worth keeping:
 
-- The privacy note becomes almost trivially strong: the _only_ outbound request the app can make is a cookieless pageview beacon. Nothing else, at all.
+- The privacy note becomes trivially strong: the app makes **no outbound request at all**. No analytics, no beacon, no third-party script — so once the service worker holds the files, nothing goes anywhere.
 - The pipeline is a single Pages deploy. No Worker to version alongside it.
 
 | In v1                                  | Deferred to v2            |
@@ -41,7 +41,6 @@ Two consequences worth keeping:
 | Days-since-transplant counter          |                           |
 | Export / import JSON                   |                           |
 | Content pages, privacy, terms          |                           |
-| Cloudflare Web Analytics               |                           |
 
 AGPL note: the app already ships its code to the browser, so satisfying the source offer is a link to the repository from the About page. Minified output is object code, so that link is the Corresponding Source obligation — cheap to comply with, worth doing deliberately rather than by accident.
 
@@ -60,7 +59,7 @@ Working and testable: `npm run dev`. 144 unit tests, 14 app and 3 offline end-to
 - [x] `.ics` export with stale-schedule detection
 - [x] Service worker, manifest, and a drawn mark with generated icons, launch images and lockups (see `static/icons/README.md` and `DESIGN.md`)
 - [x] Content pages (`/about`, `/privacy`, `/support`) prerendered as plain HTML
-- [x] Cloudflare Web Analytics, off unless `PUBLIC_CF_BEACON_TOKEN` is set
+- [x] ~~Cloudflare Web Analytics, off unless `PUBLIC_CF_BEACON_TOKEN` is set~~ — **removed.** The token was never set, so it never collected anything; the beacon, the env plumbing and the two Cloudflare origins in the CSP are all gone. See `DECISIONS.md`.
 - [x] Transplant milestones surfaced in the header
 - [x] bfcache eligibility, with a reactive date store and an enforcing test
 - [x] `AGENTS.md` recording the constraints an agent must not break
@@ -98,7 +97,7 @@ Deliberately no runtime fallback: a key enters the catalogue only once all four 
 - [ ] Have the German reviewed by a native speaker before launch
 - [x] **Replace the placeholder icons** — done; `mark.svg` was a PNG in disguise, so the pipeline was rebuilt around `npm run icons` (see `DESIGN.md`)
 - [ ] Real TWINT QR and PayPal link. `/support` hides the whole card until then — `moneyConfigured = false` in `src/routes/support/+page.svelte`. Turning it on means: add `static/twint-qr.png`, set `PAYPAL_URL` to a real `paypal.me` handle, flip the flag. Before doing it, settle what it publishes about me, because both methods identify their recipient: a personal TWINT QR encodes a mobile number, and a `paypal.me` link shows the account holder's legal name. That is a deliberate disclosure on a page about a health condition, and it is the same question already settled firmly for the example regimen, only pointing at contact details instead of medication. A business TWINT account or a dedicated handle would avoid it. Also worth checking whether voluntary tips to a private individual carry any Swiss obligation to publish an address, since the answer changes what the page must contain rather than what it may.
-- [ ] Cloudflare beacon token, once the domain and account exist
+- [x] ~~Cloudflare beacon token, once the domain and account exist~~ — not needed; analytics removed entirely
 - [x] **`targetHorizonDays` defaults to 30** (see the note below)
 - [ ] Epsilonapril appeared on the real order despite 600 days of recorded cover — either the spreadsheet quantity is wrong or it is topped up out of habit
 - [x] Playwright, including the offline test — 14 app tests and 3 offline tests that stop the origin rather than emulating it
@@ -231,37 +230,39 @@ Web Push, when built:
 
 **A content-free push needs no payload encryption.** RFC 8030 permits a push message with no body: the `push` event fires with `event.data === null`. Since the service worker composes the text from local IndexedDB anyway, there is no payload — which removes RFC 8291 AES128GCM encryption entirely. All that is left is a VAPID ES256 JWT (RFC 8292) and a POST with an empty body. That is plain Web Crypto: no `web-push` library, no npm dependency, on any runtime.
 
-**Do not use SNS** if AWS is ever revisited: it reaches web push destinations only with FCM as the transport, meaning a Firebase project and Google in the delivery path, for no benefit.
+**Not SNS.** It reaches web push destinations only with FCM as the transport, which puts a Firebase project and Google in the delivery path for no benefit.
 
 - [ ] Client subscribes with `pushManager.subscribe()`, passing `userVisibleOnly` and the VAPID `applicationServerKey`, then posts the subscription to the API
 - [ ] Store: endpoint, reminder times, IANA timezone. The `p256dh` and `auth` keys are only needed if a payload is ever added — do not collect them yet.
-- [ ] **Derive due-ness, never write per send.** The sweep selects subscriptions whose local time falls in the current bucket, computed from the stored times and timezone. No "last sent" write. That keeps the whole tier read-only in steady state, which removes the dominant cost on AWS and the only hard free -tier ceiling on Cloudflare.
-- [ ] Sweep every 5 minutes (Workers Cron Trigger, or EventBridge → Lambda)
-- [ ] VAPID private key in the platform secret store (Workers secret, or SSM Parameter Store — free; not Secrets Manager at $0.40/secret/month)
+- [ ] **Derive due-ness, never write per send.** The sweep selects subscriptions whose local time falls in the current bucket, computed from the stored times and timezone. No "last sent" write. That keeps the whole tier read-only in steady state, which removes the only hard free-tier ceiling — and matters for reliability rather than cost, since a D1 daily limit returns errors and reminders would stop rather than degrade.
+- [ ] Sweep every 5 minutes (Workers Cron Trigger)
+- [ ] VAPID private key in the Workers secret store
 - [ ] Always display a notification on wake (browsers tolerate only a small budget of silent pushes before showing their own generic message)
 - [ ] On `404`/`410` from a push endpoint, delete the subscription — expired subscriptions otherwise accumulate forever and inflate the sweep
 - [ ] Reminder types: dose due · stock low, naming the products to collect · transplant anniversary
 - [ ] Graceful degradation: if push is unavailable, say so plainly and suggest the OS alarm app as backup rather than failing silently
 - [ ] Log retention capped (14 days) — the one line item that grows unnoticed
 
-## 4. Telemetry — Cloudflare Web Analytics
+## 4. Telemetry — none
 
-**Decided: Cloudflare Web Analytics only.** Cookieless, no client-side identifier, no new data processor (Cloudflare already hosts the site), and therefore **no consent banner**. GA4 rejected — see `DECISIONS.md`.
+**Decided: no client-side telemetry at all.** GA4 was rejected, Cloudflare Web Analytics was chosen instead, its plumbing shipped behind `PUBLIC_CF_BEACON_TOKEN`, the token was never set — and rather than finish it, the beacon was removed. Both decisions and the accepted cost are in `DECISIONS.md`.
 
-- [ ] Enable Web Analytics on the zone and add the beacon
-- [ ] Verify SPA route tracking is on, or route changes will not register
-- [ ] **Use distinct paths, not query strings, for acquisition channels.** `/cto` and `/martigny` redirecting into the app gives a reliable pageview split; `?src=` may not be broken out as its own dimension.
-- [ ] Confirm what the beacon collects and describe it plainly in the privacy note
+Removed with it: `src/lib/Analytics.svelte`, the `__CF_BEACON_TOKEN__` define and its `loadEnv` plumbing in `vite.config.ts`, the declaration in `src/app.d.ts`, `.env`, and — the part that actually matters — `https://static.cloudflareinsights.com` from `script-src` and `https://cloudflareinsights.com` from `connect-src`. The generated policy is now `'self'` and nothing else, which `e2e/app.spec.ts` already asserts by failing on any non-local request.
+
+- [x] ~~Enable Web Analytics on the zone and add the beacon~~
+- [x] ~~Verify SPA route tracking is on, or route changes will not register~~
+- [ ] **Use distinct paths, not query strings, for acquisition channels.** Still worth doing, and now the _only_ way to attribute anything: `/cto` and `/martigny` redirecting into the app are real document requests, so Cloudflare's edge HTTP traffic counts them. `?src=` is not broken out as its own dimension.
+- [x] ~~Confirm what the beacon collects and describe it plainly in the privacy note~~ — the privacy page now says nothing is collected, in all four languages
 
 ### What this deliberately does not measure
 
-Web Analytics has no custom event API, so there is no `dose_logged`, `order_generated` or `reminder_enabled`. Available: pageviews per route, referrers, country, device class, Core Web Vitals. That answers "how many people arrive and from which flyer", not "how many actually use it".
+Everything except arrival. Edge HTTP traffic sees the first document request and nothing after it: the service worker answers later navigations from cache, and moving between screens is client-side routing. So there is no way to know whether someone who landed on the app ever reached the Stock screen, let alone recorded a dose.
 
-Accepted for v1. If the product questions become pressing, add a first-party `POST /e` counter on the Worker (see Deferred). Not before there is a decision it would change.
+Accepted, because no decision is currently waiting on that answer and the honesty of the privacy claim is worth more than the curiosity. If the product questions do become pressing there are two routes, in increasing cost: set the beacon token again in the Pages dashboard, which is one field and restores pageviews per route; or add a first-party `POST /e` counter on the Worker (see Deferred). Not before there is a decision it would change.
 
 ### The resulting privacy position
 
-With this choice, the only things that ever leave the device are a push subscription (if reminders are enabled) and a cookieless pageview beacon. No health data, no identifier, no account. That is a short, true, and unusually strong privacy note — and worth protecting when future features are proposed.
+In v1, **nothing leaves the device — at all.** Not health data, not an identifier, not a pageview. From v2 the only thing that ever will is a push subscription, if reminders are switched on. That is a short, true, and unusually strong privacy note, and it is now testable rather than merely asserted: `e2e/app.spec.ts` fails if a single request reaches a non-local host. Worth protecting when future features are proposed.
 
 ## 5. Pages
 
@@ -298,7 +299,7 @@ Options:
 ### Trust, whichever licence is chosen
 
 - [ ] **Make the privacy claim independently verifiable.** Because everything runs client-side, anyone can open DevTools, watch the Network tab, and confirm that logging a dose produces no outbound request. Say so on the privacy page and explain how to check. A claim someone can falsify in thirty seconds is worth more to a non-technical user than a repository they will never read — which is why this matters more than the licence for trust purposes.
-- [ ] Publish the exact list of outbound requests the app can ever make: the pageview beacon, and the push subscription if reminders are enabled. Nothing else. Then hold to it.
+- [ ] Publish the exact list of outbound requests the app can ever make: in v1, none at all; from v2, the push subscription if reminders are enabled. Nothing else. Then hold to it.
 - [ ] Terms of use: free to use, no warranty, not medical advice, may be discontinued, no guarantee of data retention on the device
 - [ ] No account, no sign-up, no email required
 - [ ] Say plainly on the landing page that data stays on the device
@@ -306,7 +307,7 @@ Options:
 
 #### Share the backup to the OS, rather than integrating a cloud provider
 
-- [ ] **Offer the backup through the Web Share API** — `navigator.share({ files: [backup] })` hands the file to the OS share sheet, so the user can put it in Drive, iCloud, Files, or anything else installed. Deliberately **not** a Google Drive integration: browser-only OAuth issues a one-hour access token and no refresh token, so it could never back up unattended anyway, and it would cost a Google Cloud project, brand verification, `accounts.google.com` in the CSP, and the rewriting of "the only outbound request the app can make is a cookieless pageview beacon" in five places. The share sheet is the OS, not a third party: no network request leaves the page, so `e2e/app.spec.ts` stays green and the privacy position is untouched. The promise is explicitly _a way out_, not a guaranteed backup — the app cannot know where the file went, and the copy should not imply it does.
+- [ ] **Offer the backup through the Web Share API** — `navigator.share({ files: [backup] })` hands the file to the OS share sheet, so the user can put it in Drive, iCloud, Files, or anything else installed. Deliberately **not** a Google Drive integration: browser-only OAuth issues a one-hour access token and no refresh token, so it could never back up unattended anyway, and it would cost a Google Cloud project, brand verification, `accounts.google.com` in the CSP, and the rewriting of a privacy claim that is now stronger than it was — v1 makes no outbound request at all. The share sheet is the OS, not a third party: no network request leaves the page, so `e2e/app.spec.ts` stays green and the privacy position is untouched. The promise is explicitly _a way out_, not a guaranteed backup — the app cannot know where the file went, and the copy should not imply it does.
 
   Four things to get right, in the order they will cost time:
 
@@ -477,6 +478,12 @@ Closing it does not require moving deploys into Actions. Protecting `main` so th
 - [ ] Work on branches named `feature/<short-name>` or `fix/<short-name>`, open a pull request, let Cloudflare build the preview and Actions run the gate, and merge only when both are green.
 - [ ] Decide the merge strategy, because it interacts with the single-commit convention. Squash merge keeps one commit per change on `main` and is the closest continuation of the current history; merge commits would make `main` a record of branches rather than of changes. Amending a published commit stops being appropriate once anything is merged, since `main` will no longer be safe to force-push.
 - [ ] Add a post-deploy smoke check that would have caught the CSP breakage: load the live site in a headless browser, assert no console errors and that a click does something. A status code is not evidence the app runs, which is the whole lesson of that incident.
+
+- [ ] **`CONTRIBUTING.md`, but only after the flow above actually works.** A contributing guide that describes a pull-request flow while `main` still takes direct pushes documents an aspiration, and the first outside contributor discovers the difference. Write it once branch protection is on and one change has genuinely gone through a branch, a preview build and a green gate — then the document is a description rather than a promise.
+
+  What it needs to cover, most of which already exists in scattered form: the four commands that must pass before anything is claimed to work (`check`, `test`, `build`, plus `format`), the branch naming and merge strategy settled above, the `(feat)` / `(fix)` commit prefix this history already uses, and a pointer to `AGENTS.md` — which is written for agents but is the shortest statement of the constraints a human contributor must not break either.
+
+  Two things a contributor cannot be expected to infer, and which belong at the top rather than buried: the medical-device boundary in `DECISIONS.md` is not negotiable feature by feature, so a pull request that derives a dose or interprets a lab value will be declined on principle rather than on quality; and a change to any type in `src/lib/domain/types.ts` drags the backup round-trip checklist with it, or a restore silently loses the field.
 
 ### Already in place
 

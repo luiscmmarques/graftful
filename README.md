@@ -25,7 +25,7 @@ Four screens. **Today** shows what to take at each time, with pill counts per pr
 
 Reminders work through a generated calendar file: no web API can schedule a local notification, so an `.ics` with `VALARM` entries is the only mechanism that fires offline, on every platform including iOS, with no server. Push notifications, with a "taken" button, come in v2.
 
-Everything runs offline after first load, and no health data leaves the device — the only outbound request the app can make is a cookieless pageview beacon. Both claims are tested rather than asserted: `e2e/offline.spec.ts` kills the origin outright and reloads, and `e2e/app.spec.ts` fails if any request leaves the app.
+Everything runs offline after first load, and nothing leaves the device at all — there is no analytics, no beacon and no third-party script, so once the files are cached the app makes no network request whatsoever. Both claims are tested rather than asserted: `e2e/offline.spec.ts` kills the origin outright and reloads, and `e2e/app.spec.ts` fails if any request leaves the app.
 
 ## Layout
 
@@ -78,7 +78,7 @@ Ordering and receiving are separate events. Ordering records the request and sil
 
 The app records clinical data but never acts on it. It does not derive doses, interpret lab values, warn about interactions, or advise on a missed dose. See `DECISIONS.md` for the full list and the reasoning — that boundary is what keeps this outside medical-device regulation, and it is not negotiable feature by feature.
 
-`STACK.md` covers the stack, `COSTS.md` the hosting comparison, `TODO.md` what is left.
+`STACK.md` covers the stack, `COSTS.md` what it costs to run, `TODO.md` what is left.
 
 ## Design
 

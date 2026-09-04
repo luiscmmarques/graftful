@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import Analytics from '$lib/Analytics.svelte';
 	import { regimen } from '$lib/db';
 	import { elapsedSince, type Milestone, upcomingMilestones } from '$lib/domain/anniversary';
 	import { today } from '$lib/lifecycle';
@@ -87,10 +86,6 @@
 		if (event.key === 'Escape') menuOpen = false;
 	}}
 />
-
-<svelte:head>
-	<Analytics />
-</svelte:head>
 
 <div class="shell">
 	<header>

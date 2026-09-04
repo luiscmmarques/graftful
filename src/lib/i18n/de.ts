@@ -377,11 +377,9 @@ export const de: Messages = {
 		checkTitle: 'Wie Sie es prüfen, statt mir zu glauben',
 		checkBody:
 			'Öffnen Sie die Entwicklerwerkzeuge Ihres Browsers, gehen Sie auf den Reiter Netzwerk und benutzen Sie dann die App: fügen Sie ein Produkt hinzu, erfassen Sie eine Bestandszählung, erzeugen Sie eine Bestellung. Es wird nichts gesendet. Das ist mehr wert als jede Datenschutzerklärung, weil Sie das tatsächliche Verhalten beobachten und nicht eine Behauptung darüber lesen.',
-		collectedTitle: 'Das Einzige, was erhoben wird',
+		collectedTitle: 'Es wird nichts erhoben',
 		collected:
-			'Seitenaufrufe, über Cloudflare Web Analytics. Erfasst wird, dass eine Seite geöffnet wurde, ungefähr aus welchem Land die Anfrage kam, und welche Seite es war. Es setzt keine Cookies, erstellt keinen Fingerabdruck Ihres Browsers und kann nichts von dem sehen, was Sie eingegeben haben. Ich nutze es, um zu wissen, ob die App überhaupt gefunden wird.',
-		collectedBlockable:
-			'Es ist ein einzelnes Skript von Cloudflare. Wenn Sie es blockieren, funktioniert die App genau gleich.',
+			'Keine Statistiken, kein Besuchszähler und kein Skript von Dritten, gleich welcher Art. Die App lädt nur Dateien, die sie selbst ausliefert, und braucht nach dem ersten Besuch kein Netz mehr. Eine frühere Version zählte Seitenaufrufe über Cloudflare; das wurde entfernt, und nichts ist an seine Stelle getreten.',
 		practiceTitle: 'Was das in der Praxis bedeutet',
 		clearingLead: 'Das Löschen Ihrer Browserdaten löscht Ihren Einnahmeplan.',
 		clearingBody:

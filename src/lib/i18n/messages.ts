@@ -360,7 +360,6 @@ export interface Messages {
 		checkBody: string;
 		collectedTitle: string;
 		collected: string;
-		collectedBlockable: string;
 		practiceTitle: string;
 		clearingLead: string;
 		clearingBody: string;

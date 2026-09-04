@@ -10,13 +10,6 @@ declare global {
 	 */
 	const __APP_VERSION__: string;
 
-	/**
-	 * Cloudflare Web Analytics token, injected by vite.config.ts from
-	 * `PUBLIC_CF_BEACON_TOKEN`. Empty string when unset, which is the case in a clean clone,
-	 * in CI, and in any fork — the beacon then renders nothing at all.
-	 */
-	const __CF_BEACON_TOKEN__: string;
-
 	namespace App {
 		// interface Error {}
 		// interface Locals {}

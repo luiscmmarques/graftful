@@ -375,11 +375,9 @@ export const fr: Messages = {
 		checkTitle: 'Comment le vérifier, plutôt que de me croire sur parole',
 		checkBody:
 			'Ouvrez les outils de développement de votre navigateur, allez dans l’onglet Réseau, puis utilisez l’application : ajoutez un produit, enregistrez un comptage de stock, générez une commande. Rien ne sera envoyé. Cela vaut mieux que n’importe quelle politique de confidentialité, car vous observez le comportement réel au lieu de lire une affirmation à son sujet.',
-		collectedTitle: 'La seule chose qui est collectée',
+		collectedTitle: 'Rien n’est collecté',
 		collected:
-			'Les pages vues, via Cloudflare Web Analytics. Cela enregistre qu’une page a été ouverte, approximativement depuis quel pays d’après la requête, et laquelle. Aucun cookie n’est déposé, votre navigateur n’est pas identifié par empreinte, et rien de ce que vous avez saisi n’est visible. Je m’en sers pour savoir si quelqu’un trouve l’application.',
-		collectedBlockable:
-			'Il s’agit d’un seul script provenant de Cloudflare. Si vous le bloquez, l’application fonctionne exactement de la même façon.',
+			'Aucune statistique, aucun compteur de visites, aucun script tiers d’aucune sorte. L’application ne charge que des fichiers qu’elle héberge elle-même : après la première visite, elle n’a plus besoin du réseau. Une version antérieure comptait les pages vues via Cloudflare ; cela a été retiré, et rien ne l’a remplacé.',
 		practiceTitle: 'Ce que cela signifie en pratique',
 		clearingLead: 'Effacer les données de votre navigateur supprimera votre schéma de traitement.',
 		clearingBody:

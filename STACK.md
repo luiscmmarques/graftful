@@ -1,6 +1,6 @@
 # Tech stack
 
-Platform: **Cloudflare**. See `COSTS.md` for how that was decided.
+Platform: **Cloudflare**, chosen for operational surface rather than price. `COSTS.md` records what it costs to run.
 
 Guiding constraints, in the order they broke ties:
 
@@ -13,27 +13,27 @@ Guiding constraints, in the order they broke ties:
 
 What v1 actually ships. Anything not in this table is not in the repository.
 
-| Concern         | Choice                                                  |
-| --------------- | ------------------------------------------------------- |
-| Language        | TypeScript, `strict`                                    |
-| Build           | Vite                                                    |
-| Framework       | Svelte 5 + SvelteKit, `adapter-static`                  |
-| Styling         | Plain CSS, custom properties, Svelte scoped styles      |
-| Local storage   | IndexedDB via Dexie                                     |
-| Reactivity      | Svelte 5 runes + Dexie `liveQuery`                      |
-| Routing         | SvelteKit file-based                                    |
-| PWA             | `@vite-pwa/sveltekit` in `injectManifest` mode          |
-| i18n            | Hand-rolled typed catalogue, English as source          |
-| Unit tests      | Vitest                                                  |
-| E2E             | Playwright                                              |
-| Hosting         | Cloudflare Pages                                        |
-| Reminders       | Generated `.ics` with `VALARM`, no server               |
-| Format          | Prettier (`npm run lint` is `prettier --check`)         |
-| Types           | `svelte-check`                                          |
-| Telemetry       | Cloudflare Web Analytics (cookieless, no custom events) |
-| Tips            | TWINT QR + PayPal link (links only, no SDK)             |
-| Assets          | `npm run icons` and `npm run lockup`, via Playwright    |
-| Package manager | npm                                                     |
+| Concern         | Choice                                                |
+| --------------- | ----------------------------------------------------- |
+| Language        | TypeScript, `strict`                                  |
+| Build           | Vite                                                  |
+| Framework       | Svelte 5 + SvelteKit, `adapter-static`                |
+| Styling         | Plain CSS, custom properties, Svelte scoped styles    |
+| Local storage   | IndexedDB via Dexie                                   |
+| Reactivity      | Svelte 5 runes + Dexie `liveQuery`                    |
+| Routing         | SvelteKit file-based                                  |
+| PWA             | `@vite-pwa/sveltekit` in `injectManifest` mode        |
+| i18n            | Hand-rolled typed catalogue, English as source        |
+| Unit tests      | Vitest                                                |
+| E2E             | Playwright                                            |
+| Hosting         | Cloudflare Pages                                      |
+| Reminders       | Generated `.ics` with `VALARM`, no server             |
+| Format          | Prettier (`npm run lint` is `prettier --check`)       |
+| Types           | `svelte-check`                                        |
+| Telemetry       | None — no analytics, no beacon, no third-party script |
+| Tips            | TWINT QR + PayPal link (links only, no SDK)           |
+| Assets          | `npm run icons` and `npm run lockup`, via Playwright  |
+| Package manager | npm                                                   |
 
 **Deferred to v2, and deliberately absent from the repository today:** a standalone Cloudflare Worker for the push API and cron, Web Push with VAPID over Web Crypto, D1 for subscriptions, and `wrangler.toml`. There is no ESLint config: Prettier plus `svelte-check` is the whole gate, and adding a linter has not yet paid for itself on four screens.
 
@@ -99,19 +99,19 @@ One zone, one Pages project, one Worker, one database. Terraform's Cloudflare pr
 
 ## Telemetry — decided
 
-**Cloudflare Web Analytics.** Cookieless, no client-side identifier, no new data processor since Cloudflare already hosts the site, and therefore no consent banner. GA4 was considered and rejected; the reasoning is in `DECISIONS.md`.
+**None.** No analytics, no beacon, no third-party script of any kind. Cloudflare Web Analytics was the chosen alternative to GA4 and shipped behind an environment variable; the token was never set, so it never collected anything, and it has been removed rather than finished. The reasoning and the accepted cost are in `DECISIONS.md`.
 
-Note what it is not: Web Analytics has **no custom event API**. It gives pageviews per route, referrers, country, device class and Core Web Vitals. It does not give `dose_logged` or `order_generated`. Two consequences:
+What that leaves, and what it does not:
 
-- Acquisition channels should be **distinct paths** (`/cto`, `/martigny` redirecting into the app), not `?src=` query strings, since a path reliably shows up as its own pageview and an arbitrary query parameter may not.
+- **Acquisition is still measurable**, from Cloudflare's edge HTTP traffic. It reports by path, so a flyer landing on `/cto` or `/martigny` shows up as a real document request. Acquisition channels should therefore be **distinct paths**, not `?src=` query strings, since a query parameter is not broken out as its own dimension.
 
   Not yet consistent with the rest of the project: `SPREADING.md` and the calendar export both use `?src=`, which was written before this constraint was understood. The `?src=` links are harmless and self-documenting for a human reading a calendar entry, but they should not be relied on for attribution. Either add the paths or stop expecting the numbers — recorded here rather than quietly left contradictory.
 
-- SPA route tracking has to be enabled, or client-side navigations will not register.
+- **Engagement is not measurable.** Once the service worker is installed it answers navigations from cache and in-app moves are client-side routing, so nothing after the first load reaches the edge. An offline-first PWA is invisible to server-side analytics by design, which is the same property that makes it work on a hospital connection.
 
 If product-event counters become necessary, the first-party `POST /e` design is in `TODO.md` → Deferred. Not before a decision depends on it.
 
-The resulting position is worth protecting: the only things that ever leave the device are a push subscription, if reminders are on, and a cookieless pageview beacon. No health data, no identifier, no account.
+The resulting position is the strong one: in v1 **nothing leaves the device at all**. From v2, the only thing that ever will is a push subscription, if reminders are switched on. No health data, no identifier, no account.
 
 Community statistics — publishing aggregate figures on medication burden — is **deferred**, and reframed as an anonymous survey rather than background collection. The constraints that would apply are recorded in `TODO.md` → Deferred, including small-cell suppression and the requirement to self-host the form rather than embed a Google Form, which would reintroduce exactly the third-party leak GA4 was rejected for.
 
@@ -153,7 +153,7 @@ Intended but **not** currently measured, so not claimed as gates:
 
 ## Explicitly not used
 
-- **No third-party analytics SDK or tag manager** — pending the decision above. The objection is not the vendor but the third-party request from a domain whose name is itself a health disclosure.
+- **No third-party analytics SDK or tag manager** — decided, not pending, and now not even a first-party beacon. The objection is not the vendor but the third-party request from a domain whose name is itself a health disclosure.
 - **No CDN-hosted fonts.** System font stack, or self-hosted. A font request to a third party is a request that leaks who is using a transplant medication app.
 - **No error-reporting SaaS** unless it can be configured to send no user content. A stack trace from this app can contain drug names.
 - **No Firebase**, which is what using SNS for web push would have required.

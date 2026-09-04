@@ -371,11 +371,9 @@ export const pt: Messages = {
 		checkTitle: 'Como confirmar, em vez de acreditar na minha palavra',
 		checkBody:
 			'Abra as ferramentas de desenvolvimento do navegador, vá ao separador Rede e use a aplicação: acrescente um produto, registe uma contagem de stock, gere uma encomenda. Nada será enviado. Isto vale mais do que qualquer política de privacidade, porque está a observar o comportamento real em vez de ler uma afirmação sobre ele.',
-		collectedTitle: 'A única coisa recolhida',
+		collectedTitle: 'Não é recolhido nada',
 		collected:
-			'As visitas às páginas, através do Cloudflare Web Analytics. Regista que uma página foi aberta, aproximadamente de que país veio o pedido, e qual a página. Não coloca cookies, não recolhe impressão digital do navegador e não vê nada do que escreveu. Uso-o para saber se alguém está a encontrar a aplicação.',
-		collectedBlockable:
-			'É um único script da Cloudflare. Se o bloquear, a aplicação funciona exactamente da mesma forma.',
+			'Sem estatísticas, sem contador de visitas e sem qualquer script de terceiros. A aplicação carrega apenas ficheiros que serve ela própria, pelo que, depois da primeira visita, não precisa da rede. Uma versão anterior contava as visitas às páginas através do Cloudflare; isso foi removido e nada o substituiu.',
 		practiceTitle: 'O que isto significa na prática',
 		clearingLead: 'Apagar os dados do navegador apaga o seu esquema.',
 		clearingBody:
