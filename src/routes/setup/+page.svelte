@@ -55,15 +55,18 @@
 	// --- settings ---
 	let transplantDate = $state('');
 	let horizon = $state(30);
+	// Opt-out: absent means shown, which is what the app did before the setting existed.
+	let showMilestones = $state(true);
 	let syncedDetails = '';
 
 	// Same resync as the times above, for the same reason.
 	$effect(() => {
-		const stored = `${$settingsStore?.transplantDate ?? ''}|${$settingsStore?.targetHorizonDays ?? 60}`;
+		const stored = `${$settingsStore?.transplantDate ?? ''}|${$settingsStore?.targetHorizonDays ?? 60}|${$settingsStore?.showMilestones ?? true}`;
 		if (stored !== syncedDetails) {
 			syncedDetails = stored;
 			transplantDate = $settingsStore?.transplantDate ?? '';
 			horizon = $settingsStore?.targetHorizonDays || 30;
+			showMilestones = $settingsStore?.showMilestones !== false;
 		}
 	});
 
@@ -399,7 +402,7 @@
 		}
 
 		settingsError = '';
-		await saveSettings({ transplantDate: date, targetHorizonDays: days });
+		await saveSettings({ transplantDate: date, targetHorizonDays: days, showMilestones });
 	}
 
 	let productFormError = $state('');
@@ -666,6 +669,11 @@
 		<span>{$t.setup.horizonLabel}</span>
 		<input type="number" min="7" step="1" bind:value={horizon} />
 	</label>
+	<label class="checkbox">
+		<input type="checkbox" bind:checked={showMilestones} />
+		<span>{$t.setup.showMilestonesLabel}</span>
+	</label>
+	<p class="muted" style="margin-top:0">{$t.setup.showMilestonesNote}</p>
 	<button onclick={saveSettingsForm}>{$t.common.save}</button>
 	{#if settingsError}<p class="stale">{settingsError}</p>{/if}
 </div>
@@ -1170,6 +1178,25 @@
 </div>
 
 <style>
+	/*
+	 * The whole row is the tap target, not just the box.
+	 *
+	 * A default checkbox renders around 13px, well under the --tap floor, and this audience
+	 * skews older. Wrapping it in the label and giving the label the minimum height means the
+	 * text is tappable too, which is the part people actually aim at.
+	 */
+	.checkbox {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: var(--tap);
+	}
+
+	.checkbox input {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
 	.line + .line {
 		border-top: 1px solid var(--line);
 		margin-top: 0.625rem;

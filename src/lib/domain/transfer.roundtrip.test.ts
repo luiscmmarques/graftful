@@ -95,7 +95,8 @@ const PREFERENCE_FIELDS: Record<keyof Preferences, true> = {
 	locale: true,
 	collectionNote: true,
 	defaultDoseTimes: true,
-	lastIcsFingerprint: true
+	lastIcsFingerprint: true,
+	showMilestones: true
 };
 
 /** Fields intentionally not carried across a backup, and why. */
@@ -171,7 +172,10 @@ const FULL_PREFERENCES: Preferences = {
 	locale: 'pt',
 	collectionNote: 'sexta-feira de manhã',
 	defaultDoseTimes: ['06:15', '18:15'],
-	lastIcsFingerprint: 'fingerprint-1'
+	lastIcsFingerprint: 'fingerprint-1',
+	// Deliberately `false`, not `true`: absent already means shown, so `true` could not tell
+	// "preserved" apart from "dropped and defaulted".
+	showMilestones: false
 };
 
 function keysOf(map: Record<string, true>): string[] {

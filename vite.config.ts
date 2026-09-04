@@ -51,6 +51,20 @@ const pwaManifest: Partial<ManifestOptions> = {
 	start_url: '/',
 	scope: '/',
 	/*
+	 * The app identity, stated rather than inferred.
+	 *
+	 * With no `id`, browsers derive one from `start_url`, and Chrome's manifest panel says so
+	 * as a note. That works until `start_url` changes — at which point the browser sees a
+	 * different application, and an already-installed Graftful becomes a second, unrelated
+	 * entry rather than an update. `'/'` resolves to exactly the identity currently in use, so
+	 * setting it now is a no-op for anyone who has already installed and a fixed anchor
+	 * afterwards.
+	 *
+	 * For the same reason this value must never change again, in the way `UID_NAMESPACE` must
+	 * not: it is an identifier, not a URL, and its only job is to stay the same.
+	 */
+	id: '/',
+	/*
 	 * Chrome shows a fuller install dialogue when screenshots are present, and warns in
 	 * DevTools when they are missing: it wants one `wide` for desktop and one narrow for
 	 * mobile. Generated from the real app by `npm run screenshots`, using the example

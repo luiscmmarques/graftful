@@ -163,6 +163,9 @@ export const pt: Messages = {
 		detailsTitle: 'As suas informações',
 		transplantDate: 'Data do transplante',
 		horizonLabel: 'Horizonte de reposição em dias: quanto tempo uma encomenda deve cobrir',
+		showMilestonesLabel: 'Mostrar marcos no cabeçalho',
+		showMilestonesNote:
+			'Contagens redondas de dias, como 1000 dias, aparecem no topo do ecrã quando se aproximam. A contagem de dias em si mantém-se de qualquer forma.',
 		errorBadDate: 'Essa data não existe. Use AAAA-MM-DD.',
 		errorHorizon: 'O horizonte tem de ser um número inteiro de dias, pelo menos 1.',
 
@@ -406,7 +409,7 @@ export const pt: Messages = {
 			'Alterações de dose que mantêm o seu historial em vez de o substituírem',
 			'Avisos de calendário que exporta uma vez e importa no telefone',
 			'Cópia de segurança e restauro como ficheiro que é seu',
-			'Funciona sem ligação, sem que nada sobre a sua saúde saia do dispositivo'
+			'Funciona sem ligação e, depois de carregada, não faz qualquer pedido de rede'
 		],
 		remindersTitle: 'A seguir: avisos a sério',
 		reminders1:

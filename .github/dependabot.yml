@@ -1,0 +1,51 @@
+# Dependency updates.
+#
+# `npm ci` has been reporting a handful of low-severity advisories that nothing tracked, and
+# "nothing tracked" is the actual problem rather than the severity: a single-maintainer project
+# has no other mechanism that would notice a dependency going bad.
+#
+# Grouped and monthly on purpose. This app has one runtime dependency (`dexie`) and the rest is
+# build tooling, so a weekly stream of individual pull requests would be noise that gets
+# ignored — and an ignored bot is worse than no bot, because it looks like coverage. Security
+# updates are deliberately left ungrouped and are not rate-limited by `open-pull-requests-limit`
+# in the same way, so they arrive on their own and are visible.
+#
+# Once `main` requires pull requests and passing checks, these arrive already gated: the CI
+# gate runs `check`, the unit suite, the build and the end-to-end tests against the bump before
+# it can be merged. That is the point at which this stops being a notification and becomes a
+# test.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      # One pull request for routine tooling bumps, which is nearly everything here.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      # Runtime is only `dexie`, and it holds every regimen on the device. A major bump there
+      # deserves to arrive alone and be read carefully.
+      production-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      # Matches the (feat) / (fix) prefix this history already uses.
+      prefix: (fix)
+      prefix-development: (fix)
+      include: scope
+
+  # The workflow actions themselves. Pinned versions here go stale silently, and a deprecated
+  # runner image is the failure that takes CI down on a morning when something else is wrong.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: (fix)

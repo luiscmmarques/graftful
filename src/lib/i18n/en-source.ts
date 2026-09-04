@@ -148,6 +148,9 @@ export const en: Messages = {
 		detailsTitle: 'Your details',
 		transplantDate: 'Transplant date',
 		horizonLabel: 'Top-up horizon in days: how far ahead an order should cover',
+		showMilestonesLabel: 'Show milestones in the header',
+		showMilestonesNote:
+			'Round day counts, like 1000 days, appear at the top of the screen as they approach. The day count itself stays either way.',
 		errorBadDate: 'That date does not exist. Use YYYY-MM-DD.',
 		errorHorizon: 'The horizon must be a whole number of days, at least 1.',
 
@@ -385,7 +388,7 @@ export const en: Messages = {
 			'Dose changes that keep your history rather than overwriting it',
 			'Calendar reminders you export once and import into your phone',
 			'Backup and restore as a file you hold',
-			'Works offline, with nothing about your health leaving the device'
+			'Works offline, and once loaded it makes no network request at all'
 		],
 		remindersTitle: 'Next: proper reminders',
 		reminders1:

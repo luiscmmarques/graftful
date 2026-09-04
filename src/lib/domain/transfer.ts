@@ -53,6 +53,14 @@ export interface Preferences {
 	collectionNote?: string;
 	defaultDoseTimes?: string[];
 	lastIcsFingerprint?: string;
+	/**
+	 * Whether the header shows the round-day milestone line.
+	 *
+	 * Absent means shown, which is what the app has always done. The point of the setting is
+	 * that a countdown attached to a transplant is not universally welcome — some people mark
+	 * the day, others would rather not be reminded that anything is being counted.
+	 */
+	showMilestones?: boolean;
 }
 
 export interface ExportPayload {
@@ -339,7 +347,17 @@ export function parseImport(json: string): ImportResult {
 		defaultDoseTimes: times.length > 0 ? times : undefined,
 		lastIcsFingerprint: settingsIn.lastIcsFingerprint
 			? asString(settingsIn.lastIcsFingerprint)
-			: undefined
+			: undefined,
+		/*
+		 * Read with `typeof`, not `=== true`.
+		 *
+		 * The obvious `settingsIn.showMilestones === true ? true : undefined` discards `false`
+		 * — which is the only value anyone ever bothers to set, since absent already means
+		 * shown. A restore would then start counting days at somebody who had deliberately
+		 * turned that off, from a file that recorded their choice correctly.
+		 */
+		showMilestones:
+			typeof settingsIn.showMilestones === 'boolean' ? settingsIn.showMilestones : undefined
 	};
 
 	return { state, preferences, warnings };

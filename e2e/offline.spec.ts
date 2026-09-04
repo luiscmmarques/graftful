@@ -140,9 +140,9 @@ test('data can be entered with the origin gone', async ({ page }) => {
 
 	await page.reload();
 	await page.getByRole('button', { name: 'Load example regimen' }).click();
-	await expect(page.getByText('Alfabine (maintenance)')).toBeVisible();
+	await expect(page.getByText('Alfabine', { exact: true })).toBeVisible();
 
 	// And it survives, because IndexedDB is local and the shell comes from cache.
 	await page.reload();
-	await expect(page.getByText('Alfabine (maintenance)')).toBeVisible();
+	await expect(page.getByText('Alfabine', { exact: true })).toBeVisible();
 });

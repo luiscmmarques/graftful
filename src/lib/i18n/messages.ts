@@ -170,6 +170,9 @@ export interface Messages {
 		detailsTitle: string;
 		transplantDate: string;
 		horizonLabel: string;
+		/** Opt-out for the round-day milestone line in the header. */
+		showMilestonesLabel: string;
+		showMilestonesNote: string;
 		errorBadDate: string;
 		errorHorizon: string;
 

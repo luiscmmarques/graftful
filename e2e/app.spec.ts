@@ -179,7 +179,7 @@ test('a backup restores the usual times and language, not just the regimen', asy
 	// Wait for the regimen on this page before navigating. The field above only proves the
 	// settings row came back; a therapy proves the products and doses did too. Navigating on
 	// the settings assertion alone races whatever is still being written.
-	await expect(page.getByText('Alfabine (maintenance)').first()).toBeVisible();
+	await expect(page.getByText('Alfabine', { exact: true }).first()).toBeVisible();
 
 	// And it is there after a reload, from the database rather than from this page's state.
 	await page.goto('/');
@@ -286,7 +286,7 @@ test('recounting to zero on a day that already has an entry actually takes effec
 	const card = page.locator('.card').filter({ hasText: 'Alfabine 4mg' }).first();
 	await expect(card).toContainText('150 left');
 
-	await card.getByRole('button', { name: /Refill, recount/ }).click();
+	await card.getByRole('button', { name: 'Modify' }).click();
 	const counts = card.locator('input[type="number"]');
 	await counts.first().waitFor();
 	for (let i = 0; i < (await counts.count()); i += 1) {
@@ -354,7 +354,7 @@ test('cancelling the import confirmation leaves the existing regimen untouched',
 	// And the regimen is still there after a reload, so nothing was written.
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
-	await expect(page.getByText('Alfabine (maintenance)').first()).toBeVisible();
+	await expect(page.getByText('Alfabine', { exact: true }).first()).toBeVisible();
 });
 
 test('the app is installable: the manifest is linked and usable', async ({ page, request }) => {

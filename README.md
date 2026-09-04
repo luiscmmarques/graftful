@@ -13,7 +13,7 @@ Open the app and press **Load example regimen** — that fills it with a real po
 
 ```sh
 npm test      # 144 unit tests
-npx playwright test  # 14 app + 3 offline
+npx playwright test  # 16 app + 3 offline
 npm run check # types
 npm run build # static output in build/, with the offline precache
 npm run preview

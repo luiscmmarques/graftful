@@ -168,6 +168,9 @@ export const de: Messages = {
 		detailsTitle: 'Ihre Angaben',
 		transplantDate: 'Datum der Transplantation',
 		horizonLabel: 'Auffüllhorizont in Tagen: wie weit eine Bestellung vorausreichen soll',
+		showMilestonesLabel: 'Meilensteine in der Kopfzeile anzeigen',
+		showMilestonesNote:
+			'Runde Tageszahlen, etwa 1000 Tage, erscheinen oben auf dem Bildschirm, wenn sie näher kommen. Die Tageszahl selbst bleibt in jedem Fall.',
 		errorBadDate: 'Dieses Datum gibt es nicht. Verwenden Sie JJJJ-MM-TT.',
 		errorHorizon: 'Der Horizont muss eine ganze Zahl von Tagen sein, mindestens 1.',
 
@@ -411,7 +414,7 @@ export const de: Messages = {
 			'Dosisänderungen, die Ihre Historie behalten statt sie zu überschreiben',
 			'Kalendererinnerungen, die Sie einmal exportieren und in Ihr Telefon importieren',
 			'Sicherung und Wiederherstellung als Datei, die Sie selbst halten',
-			'Funktioniert offline, ohne dass etwas über Ihre Gesundheit das Gerät verlässt'
+			'Funktioniert offline und stellt nach dem Laden überhaupt keine Netzwerkanfrage mehr'
 		],
 		remindersTitle: 'Als Nächstes: richtige Erinnerungen',
 		reminders1:

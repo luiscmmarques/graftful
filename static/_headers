@@ -13,9 +13,17 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
-  # No third-party scripts other than the Cloudflare beacon, and no outbound
-  # connections carrying health data. Enforced rather than merely promised.
+  # No third-party scripts at all, and no outbound connections carrying health data.
+  # The full policy is generated in vite.config.ts and delivered in a <meta> tag, because
+  # its hashes have to describe the bundle that actually shipped. `frame-ancestors` stays
+  # here: browsers ignore it in a <meta> tag.
   Content-Security-Policy: frame-ancestors 'none'
+  # Redundant on `.app`, which is HSTS-preloaded at the top level, so browsers already
+  # refuse plain HTTP for the whole TLD. Present anyway, because it costs one line and the
+  # protection would otherwise be silently absent if the app were ever served from a domain
+  # without that guarantee. No `preload` directive: the TLD already covers us, and asking to
+  # be on the preload list is a commitment that buys nothing here.
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 # Every prerendered document, revalidated on every request.
 #

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { regimen } from '$lib/db';
+	import { regimen, settingsStore } from '$lib/db';
 	import { elapsedSince, type Milestone, upcomingMilestones } from '$lib/domain/anniversary';
 	import { today } from '$lib/lifecycle';
 	import { t } from '$lib/i18n';
@@ -34,6 +34,13 @@
 	 * good thing to be told on a Tuesday morning.
 	 */
 	const milestone = $derived.by(() => {
+		/*
+		 * Opt-out, so absent means shown — that is what the app has always done, and a
+		 * setting that silently changes existing behaviour on upgrade is a worse default
+		 * than a slightly awkward one. Only the milestone line is affected; the day count
+		 * below it is a fact rather than a countdown.
+		 */
+		if ($settingsStore?.showMilestones === false) return null;
 		const tx = $regimen?.settings.transplantDate;
 		if (!tx) return null;
 		return upcomingMilestones(tx, $today, 30)[0] ?? null;

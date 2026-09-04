@@ -34,6 +34,8 @@ interface SettingsRow extends Settings {
 	locale?: Locale;
 	/** Usual collection slot, in the user's own words — "vendredi matin". */
 	collectionNote?: string;
+	/** Whether the header shows the round-day milestone line. Absent means shown. */
+	showMilestones?: boolean;
 	/**
 	 * The times this person usually takes medication, e.g. `['07:30', '19:30']`.
 	 *
@@ -494,7 +496,8 @@ export async function exportJson(): Promise<string> {
 				locale: settings.locale,
 				collectionNote: settings.collectionNote,
 				defaultDoseTimes: settings.defaultDoseTimes,
-				lastIcsFingerprint: settings.lastIcsFingerprint
+				lastIcsFingerprint: settings.lastIcsFingerprint,
+				showMilestones: settings.showMilestones
 			},
 			new Date().toISOString()
 		),

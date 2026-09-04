@@ -168,6 +168,9 @@ export const fr: Messages = {
 		transplantDate: 'Date de la transplantation',
 		horizonLabel:
 			'Horizon de réapprovisionnement en jours : la durée que doit couvrir une commande',
+		showMilestonesLabel: 'Afficher les étapes dans l’en-tête',
+		showMilestonesNote:
+			'Les nombres de jours ronds, comme 1000 jours, apparaissent en haut de l’écran à leur approche. Le compte des jours lui-même reste dans tous les cas.',
 		errorBadDate: 'Cette date n’existe pas. Utilisez AAAA-MM-JJ.',
 		errorHorizon: 'L’horizon doit être un nombre entier de jours, au moins 1.',
 
@@ -410,7 +413,7 @@ export const fr: Messages = {
 			'Les changements de dose qui conservent votre historique au lieu de l’écraser',
 			'Des rappels de calendrier que vous exportez une fois et importez dans votre téléphone',
 			'La sauvegarde et la restauration sous forme de fichier que vous conservez',
-			'Le fonctionnement hors ligne, sans que rien concernant votre santé ne quitte l’appareil'
+			'Le fonctionnement hors ligne : une fois chargée, l’application ne fait plus aucune requête réseau'
 		],
 		remindersTitle: 'Ensuite : de vrais rappels',
 		reminders1:

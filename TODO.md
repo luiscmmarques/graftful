@@ -48,7 +48,7 @@ AGPL note: the app already ships its code to the browser, so satisfying the sour
 
 ## 0b. Build status
 
-Working and testable: `npm run dev`. 144 unit tests, 14 app and 3 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
+Working and testable: `npm run dev`. 144 unit tests, 16 app and 3 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
 
 - [x] SvelteKit + Svelte 5 + Vite, `adapter-static`, every route prerendered
 - [x] Domain layer at `src/lib/domain`, still dependency-free
@@ -100,7 +100,7 @@ Deliberately no runtime fallback: a key enters the catalogue only once all four 
 - [x] ~~Cloudflare beacon token, once the domain and account exist~~ — not needed; analytics removed entirely
 - [x] **`targetHorizonDays` defaults to 30** (see the note below)
 - [ ] Epsilonapril appeared on the real order despite 600 days of recorded cover — either the spreadsheet quantity is wrong or it is topped up out of habit
-- [x] Playwright, including the offline test — 14 app tests and 3 offline tests that stop the origin rather than emulating it
+- [x] Playwright, including the offline test — 16 app tests and 3 offline tests that stop the origin rather than emulating it
 - [x] GitHub Actions: format, types, unit, build and end-to-end on every push and pull request (`.github/workflows/ci.yml`)
 - [ ] Deployment itself is left to Cloudflare Pages' own git build, so there is one way to ship rather than two. Revisit only if a deploy needs a step Pages cannot do.
 
@@ -149,7 +149,7 @@ Related: `DoseVersion.activeTo` is **exclusive**. Setting it to the last day a d
 - [x] Regression suite against the original spreadsheet's hand-kept Jours column
 - [ ] Intake log (adherence), separate from stock decrement
 - [ ] Scheduled-consumption decrement, with periodic recount prompts
-- [ ] Pharmacy order text: clipboard primary, `mailto:` secondary
+- [x] Pharmacy order text: clipboard primary, `mailto:` secondary — both present on the Order screen; the checkbox was simply never ticked
 - [ ] Export / import as JSON (data-loss insurance — see §6)
 - [ ] Lot / expiry tracking (deferred; the ledger already allows adding a column)
 
@@ -161,7 +161,7 @@ Related: `DoseVersion.activeTo` is **exclusive**. Setting it to the last day a d
 - [x] Round day-count milestones (100, 500, 1000, 2000, …)
 - [ ] Home-screen counter
 - [ ] **Anniversary via the `.ics` export in v1** — a yearly recurring event with a `VALARM`, so the graft's birthday works with no backend. The push version lands with everything else in v2.
-- [ ] Let the user choose whether milestones are shown at all — not everyone wants a countdown attached to their transplant
+- [x] **Let the user choose whether milestones are shown at all** — `showMilestones` in settings, with a toggle in Setup. Opt-out rather than opt-in, so absent means shown and nobody's header changes on upgrade. Only the milestone line is affected: the day count below it is a fact rather than a countdown, and hiding that is a separate question worth asking a real user before guessing. Read from `settingsStore` rather than the domain `Settings` type, which keeps a display preference out of the regression baseline. It is a `Preferences` field, so it goes through the backup round trip — `FULL_PREFERENCES` sets it to `false` on purpose, because `true` could not tell "preserved" from "dropped and defaulted".
 
 ## 3. PWA and offline
 
@@ -498,8 +498,9 @@ Closing it does not require moving deploys into Actions. Protecting `main` so th
 
 - [ ] Tag on `main` → production behind a manual approval gate. Only reachable by moving deploys into Actions, which reintroduces the API token above. Worth it only if the branch protection above proves insufficient.
 - [ ] Deploy the Worker and Pages together, Worker first — a site expecting an endpoint that is not live yet is worse than the reverse. Applies from v2.
-- [ ] Dependabot, and `npm audit` in CI. `npm ci` currently reports 4 low-severity advisories in the build log that nothing tracks.
-- [ ] Add `Strict-Transport-Security` to `_headers`. Low impact because `.app` is HSTS-preloaded at the top level, so browsers already refuse plain HTTP for the whole TLD, but it costs one line and stops the header being absent if the app is ever served from another domain.
+- [x] Dependabot — `.github/dependabot.yml`, monthly and grouped. Grouped on purpose: one runtime dependency and a pile of build tooling means a weekly stream of individual pull requests becomes noise, and an ignored bot is worse than no bot because it looks like coverage. Security updates still arrive on their own.
+- [ ] `npm audit` in CI. `npm ci` reports 4 low-severity advisories in the build log that nothing fails on. Worth deciding the threshold before adding it, or the gate goes red on something nobody intends to fix.
+- [x] Add `Strict-Transport-Security` to `_headers` — `max-age=31536000; includeSubDomains`, no `preload`. Redundant on `.app`, which is HSTS-preloaded at the top level, but it costs one line and stops the header being silently absent if the app is ever served from a domain without that guarantee. `preload` was left off deliberately: the TLD already covers it, and asking to join the preload list is a commitment that buys nothing here.
 
 ## 11a. Performance
 

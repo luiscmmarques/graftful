@@ -10,7 +10,10 @@ const PREFS: Preferences = {
 	locale: 'pt',
 	collectionNote: 'sexta-feira de manhã',
 	defaultDoseTimes: ['06:15', '18:15'],
-	lastIcsFingerprint: 'abc123'
+	lastIcsFingerprint: 'abc123',
+	// `false` on purpose. Absent already means shown, so `true` would pass even if the field
+	// were dropped entirely on the way back in.
+	showMilestones: false
 };
 
 const roundTrip = (prefs: Preferences = PREFS) =>
