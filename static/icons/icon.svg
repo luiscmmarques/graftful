@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Graftful">
+  <title>Graftful</title>
+  <!--
+    Full-bleed tile for the `any` icon purpose, and the favicon.
+
+    The transform centres the artwork, whose own bounding box is not centred on the canvas
+    because the mark is asymmetric, and scales it up to fill the tile properly.
+  -->
+  <rect width="512" height="512" fill="#1f6f4a" />
+  <g transform="translate(256 256) scale(1.15) translate(-300.5 -288)">
+    <g fill="none" stroke="#ffffff" stroke-width="46" stroke-linecap="round">
+      <path d="M256 396 V180" />
+      <path d="M256 296 L360 200" />
+    </g>
+    <circle cx="256" cy="296" r="38" fill="#ffffff" />
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private bug or help request
+    url: mailto:hi+bugs@graftful.app
+    about: Use email when the report cannot be described without personal health information. Never attach a Graftful backup.
+  - name: Private idea or feedback
+    url: mailto:hi+ideas@graftful.app
+    about: Use email when the feedback includes personal context you do not want in a public issue.
+  - name: General, partnership or media contact
+    url: mailto:hi@graftful.app
+    about: Everything that is not a bug or product idea.

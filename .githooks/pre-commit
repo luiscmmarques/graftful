@@ -1,0 +1,8 @@
+#!/bin/sh
+# Blocks a commit that stages personal data. One-time setup after cloning:
+#
+#   git config core.hooksPath .githooks
+#
+# The same scan runs in the unit tests, so bypassing the hook only moves the
+# failure to CI. Patterns and reasoning: scripts/check-personal-data.mjs.
+exec node scripts/check-personal-data.mjs --staged

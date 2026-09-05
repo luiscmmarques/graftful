@@ -1,0 +1,79 @@
+# The gate STACK.md describes, actually running.
+#
+# It was documented as "enforced in CI" for some time while no CI existed, which is worse
+# than having none: a claim nobody checks is how the offline feature came to be asserted
+# working for several sessions without a test.
+#
+# Deploys are deliberately not here. Cloudflare Pages builds from the repository itself, and
+# adding a second deploy path would mean two ways to ship and two ways to be wrong.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push makes an in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          # .nvmrc so this and Cloudflare Pages cannot disagree about the runtime.
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Cheapest first, so an obvious failure does not wait on a browser download.
+      - name: Format
+        run: npm run lint
+
+      - name: Types
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      # No .env exists here, which is the point: `.env` is gitignored, so this is what a
+      # clean clone and Cloudflare Pages both see. Importing a named export from
+      # `$env/static/public` used to make this a hard failure, reported as a missing service
+      # worker file — an error that points nowhere near the cause.
+      - name: Build, with no env file
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Includes the offline suite, which starts its own preview servers and kills them to
+      # prove the app is served from cache rather than the network.
+      - name: End-to-end tests
+        run: npx playwright test
+
+      # The lockup is generated from committed path coordinates, so it is reproducible
+      # anywhere. The icon rasters are not checked: the social card and launch images
+      # contain text rendered by the host's own font stack, so their bytes legitimately
+      # differ between macOS and Linux and a diff here would fail forever.
+      - name: The committed lockup matches its source
+        run: |
+          npm run lockup
+          git diff --exit-code -- static/lockup.svg static/lockup-inverse.svg \
+            || { echo "::error::static/lockup*.svg is stale. Run npm run lockup and commit."; exit 1; }
+
+      - name: Upload failing traces
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore

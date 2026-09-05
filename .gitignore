@@ -1,0 +1,31 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# Test output
+/test-results
+/playwright-report
+/playwright/.cache
+/blob-report
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Personal health data. The public example regimen in src/lib/domain/seed.ts is
+# fictional on purpose; a real one lives here and is never committed.
+private/

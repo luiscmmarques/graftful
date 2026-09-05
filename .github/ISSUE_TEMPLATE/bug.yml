@@ -1,0 +1,60 @@
+name: Bug report
+description: Something did not work or behaved unexpectedly
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. **Do not include medicine names, doses, transplant dates, screenshots of your regimen, or an exported backup.** This repository is public.
+
+        If the problem cannot be described without personal health information, email `hi+bugs@graftful.app` instead.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: Describe the behaviour, using invented product names and quantities if an example is needed.
+      placeholder: I set the example product to 0, but the displayed count stayed at 150.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Start from an empty app or the built-in example regimen where possible.
+      placeholder: |
+        1. Load the example regimen
+        2. Open Stock
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Graftful version
+      description: Shown at the bottom of About, for example 2026-08-31-100d19d.
+      placeholder: 2026-08-31-100d19d
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Safari on iPhone or iPad
+        - Chrome on Android
+        - Chrome on desktop
+        - Firefox
+        - Edge
+        - Other
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I have not included personal health information or a backup file.
+          required: true

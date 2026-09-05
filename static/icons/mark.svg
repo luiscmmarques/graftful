@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="158 145 286 286" role="img" aria-label="Graftful">
+  <title>Graftful</title>
+  <!--
+    The mark: a stem that carries on, and new growth joining it from the side.
+
+    `graft` is a horticultural word before it is a surgical one, which is the point — it says
+    the name, works for any organ, and is not clinical imagery. The join is deliberately
+    off-axis rather than a symmetrical fork: a graft is not put where the original was.
+
+    One shape, thick strokes, no text, no fine detail, so it survives being shrunk to 32 px
+    and cropped to a circle. The viewBox is trimmed to the artwork so a 16 px favicon uses
+    every pixel. Coordinates are shared with icon.svg and icon-maskable.svg — change one,
+    change all three, then run `npm run icons`.
+  -->
+  <g fill="none" stroke="#1f6f4a" stroke-width="46" stroke-linecap="round">
+    <path d="M256 396 V180" />
+    <path d="M256 296 L360 200" />
+  </g>
+  <circle cx="256" cy="296" r="38" fill="#1f6f4a" />
+</svg>
