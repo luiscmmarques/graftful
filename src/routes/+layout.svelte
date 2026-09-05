@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { regimen, settingsStore } from '$lib/db';
 	import { elapsedSince, type Milestone, upcomingMilestones } from '$lib/domain/anniversary';
+	import { APP_ORIGIN } from '$lib/domain/app-info';
 	import { today } from '$lib/lifecycle';
 	import { t } from '$lib/i18n';
 	import { watchStoredData } from '$lib/persistence';
@@ -87,6 +88,16 @@
 		{ href: '/setup', label: $t.nav.setup }
 	]);
 </script>
+
+<svelte:head>
+	<!--
+		Per-page canonical. This lived in app.html as a static link to the origin, which
+		told crawlers that every page — including the prerendered content pages — was a
+		duplicate of the homepage. Each prerendered shell now carries its own URL. The
+		Open Graph tags stay static in app.html; they describe the site, not the page.
+	-->
+	<link rel="canonical" href={`${APP_ORIGIN}${page.url.pathname}`} />
+</svelte:head>
 
 <svelte:window
 	onkeydown={(event) => {

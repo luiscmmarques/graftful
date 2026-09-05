@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kept in sync with src/routes by src/lib/seo.test.ts: add a route and the test
+     fails by name until it is listed here. No lastmod on purpose - a stale date is
+     worse than none, and nothing here maintains one. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url><loc>https://graftful.app/</loc></url>
+	<url><loc>https://graftful.app/stock</loc></url>
+	<url><loc>https://graftful.app/order</loc></url>
+	<url><loc>https://graftful.app/setup</loc></url>
+	<url><loc>https://graftful.app/about</loc></url>
+	<url><loc>https://graftful.app/privacy</loc></url>
+	<url><loc>https://graftful.app/roadmap</loc></url>
+	<url><loc>https://graftful.app/support</loc></url>
+</urlset>

@@ -12,18 +12,17 @@
 		<meta name="text-scale" content="scale" />
 
 		<!--
-			The page title and description are deliberately NOT set here.
-			Every route sets its own in svelte:head, and a static one in this file would be a
-			second title element in the document. The browser uses the first, so a page would
-			load showing the generic one and then visibly swap to the route's own on
-			hydration. e2e/app.spec.ts asserts every route provides one.
+			The page title, description and canonical are deliberately NOT set here.
+			Every route sets title and description in svelte:head, and the layout sets a
+			per-page canonical — a static canonical in this file told crawlers every page
+			was a duplicate of the homepage. e2e/app.spec.ts asserts every route titles
+			itself.
 
 			The Open Graph tags below stay static: routes do not set them, so there is
 			nothing to duplicate, and they describe the site rather than the page. The app
 			routes render only a loading shell before the local database opens, so these are
 			what a crawler or a link preview actually reads.
 		-->
-		<link rel="canonical" href="https://graftful.app/" />
 		<meta name="theme-color" content="#1f6f4a" />
 		<meta name="color-scheme" content="light" />
 
@@ -39,8 +38,27 @@
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
 		<meta property="og:image:alt" content="Graftful" />
-		<meta property="og:locale" content="en" />
+		<meta property="og:locale" content="en_US" />
 		<meta name="twitter:card" content="summary_large_image" />
+
+		<!--
+			Structured data for search results. Not executable — a CSP script-src does not
+			apply to application/ld+json, so this does not need a hash. Static English for
+			the same reason as the Open Graph tags above.
+		-->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "SoftwareApplication",
+				"name": "Graftful",
+				"url": "https://graftful.app/",
+				"description": "Medication and refill tracking for transplant recipients. Free, no account, works offline, and nothing about your health leaves your device.",
+				"applicationCategory": "HealthApplication",
+				"operatingSystem": "Any",
+				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
+				"license": "https://www.gnu.org/licenses/agpl-3.0.html"
+			}
+		</script>
 
 		<!--
 			iOS ignores the manifest icons for the home screen and uses this one, which

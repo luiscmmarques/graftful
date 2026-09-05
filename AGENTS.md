@@ -9,7 +9,7 @@ Read `DECISIONS.md` before proposing a feature. It records what was rejected and
 ```sh
 npm install
 npm run dev        # localhost:5173. Service worker is OFF in dev, on purpose.
-npm test           # Vitest, 145 tests
+npm test           # Vitest, 148 tests
 npm run check      # svelte-check. Must be 0 errors AND 0 warnings.
 npm run lint       # Prettier check
 npm run format     # Prettier write
@@ -60,7 +60,7 @@ Read [`DESIGN.md`](DESIGN.md) first. It records what the mark means, the minimum
 
 ## Changing the domain
 
-`APP_ORIGIN` in `src/lib/domain/app-info.ts`, **and** the canonical link plus the Open Graph tags in `src/app.html` — static HTML cannot import a module, so those are a second place by necessity.
+`APP_ORIGIN` in `src/lib/domain/app-info.ts`, **and** the static files that cannot import a module: the Open Graph tags and the JSON-LD block in `src/app.html`, `static/sitemap.xml`, and the Sitemap line in `static/robots.txt`. The per-page canonical needs no edit — it derives from `APP_ORIGIN` in the layout — and `src/lib/seo.test.ts` fails if the sitemap or robots.txt drift from the module.
 
 Do **not** change `UID_NAMESPACE` in the same file, even though it currently reads `graftful.app`. It namespaces iCalendar UIDs, which only need to be unique and never have to resolve. Change it and every calendar client stops recognising the events it already holds: the next import adds a second set rather than updating the first, so anyone who re-exported would get two reminders for every dose.
 
