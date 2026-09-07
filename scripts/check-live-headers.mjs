@@ -203,7 +203,68 @@ async function checkProbePathIsNotFound() {
 	}
 }
 
-await Promise.all([checkDocument(), checkSecurityTxt(), checkProbePathIsNotFound()]);
+/**
+ * The other half of the caching contract: the assets.
+ *
+ * Cloudflare's Browser Cache TTL decides whether the origin's `Cache-Control` reaches the
+ * browser at all. Set to "Respect Existing Headers" — which is what this zone uses and what the
+ * scheme in static/_headers depends on — it passes through. Set to a fixed value, Cloudflare
+ * rewrites it, and the whole design inverts: documents start being held by browsers for hours,
+ * each one referencing content-hashed filenames that stop existing after the next deploy, and
+ * hashed assets lose the year-long lifetime that stops every deploy refetching the entire app.
+ *
+ * The document side of that is already covered above, where a rewritten header would show up as
+ * a missing `no-cache`. This covers the asset side, which would otherwise degrade quietly: the
+ * app keeps working and merely gets slower for everyone, which is not the kind of regression
+ * anybody reports.
+ *
+ * The asset URL is discovered from the homepage rather than hardcoded, because every filename
+ * carries a content hash and changes on each build.
+ */
+async function checkAssetCaching() {
+	const html = await (await fetch(origin)).text();
+	const asset = html.match(/\/_app\/immutable\/[^"']+\.js/)?.[0];
+	if (!asset) {
+		fail('no hashed asset found in the homepage, so asset caching could not be checked.');
+		return;
+	}
+
+	const response = await head(asset);
+	const cacheControl = (response.headers.get('cache-control') ?? '').toLowerCase();
+	const maxAge = Number(cacheControl.match(/max-age=(\d+)/)?.[1] ?? 0);
+
+	if (!cacheControl.includes('immutable') || maxAge < 31_536_000) {
+		fail(
+			`${asset} is served "${cacheControl}", not a year of immutable caching. Its filename ` +
+				'contains a content hash, so it can never go stale — if Cloudflare is rewriting this, ' +
+				'check that Browser Cache TTL is still "Respect Existing Headers".'
+		);
+	}
+
+	/*
+	 * The worker is the one file that must never be held: it is fetched by filename, not by hash,
+	 * so a cached copy is a version of the app that can never be replaced.
+	 */
+	const worker = await head('/service-worker.js');
+	if (!worker.ok) {
+		fail(`GET /service-worker.js returned ${worker.status}, so the app cannot work offline.`);
+		return;
+	}
+	const workerCache = (worker.headers.get('cache-control') ?? '').toLowerCase();
+	if (!workerCache.includes('no-cache') && !workerCache.includes('max-age=0')) {
+		fail(
+			`/service-worker.js is served "${workerCache}". It must revalidate, or an update can ` +
+				'never take over and users stay on an old version indefinitely.'
+		);
+	}
+}
+
+await Promise.all([
+	checkDocument(),
+	checkSecurityTxt(),
+	checkProbePathIsNotFound(),
+	checkAssetCaching()
+]);
 
 for (const note of notes) console.log(`check-live-headers: note — ${note}`);
 
