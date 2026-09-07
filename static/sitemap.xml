@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Kept in sync with src/routes by src/lib/seo.test.ts: add a route and the test
-     fails by name until it is listed here. No lastmod on purpose - a stale date is
-     worse than none, and nothing here maintains one. -->
+<!-- Kept in sync with src/routes by src/lib/seo.test.ts: every route must be either listed
+     here or marked noindex, and the test fails by name on a route that is neither, or both.
+     No lastmod on purpose - a stale date is worse than none, and nothing here maintains one.
+
+     The app screens (/stock, /order, /setup) are deliberately absent. They prerender to the
+     word "Loading..." because every figure on them comes from the local database, so listing
+     them would submit three near-identical thin pages and ask a crawler to spend its budget
+     on them instead of on the content pages people actually arrive through. A sitemap is a
+     list of URLs worth indexing, so a noindex URL in one is a contradiction.
+
+     / stays, despite prerendering the same shell: it is the homepage, its Open Graph tags and
+     JSON-LD carry the meaning, and it is the URL on every flyer and QR code. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url><loc>https://graftful.app/</loc></url>
-	<url><loc>https://graftful.app/stock</loc></url>
-	<url><loc>https://graftful.app/order</loc></url>
-	<url><loc>https://graftful.app/setup</loc></url>
 	<url><loc>https://graftful.app/about</loc></url>
 	<url><loc>https://graftful.app/privacy</loc></url>
 	<url><loc>https://graftful.app/roadmap</loc></url>

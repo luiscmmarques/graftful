@@ -45,6 +45,13 @@
 			Structured data for search results. Not executable — a CSP script-src does not
 			apply to application/ld+json, so this does not need a hash. Static English for
 			the same reason as the Open Graph tags above.
+
+			Every field here is checkable against the app. There is deliberately no
+			aggregateRating: no rating exists to report, and inventing one to win a star in a
+			search result would be both a fabrication and, by Google's own rules, grounds for
+			losing the rich result entirely. `inLanguage` lists the five catalogues that
+			actually ship, and `isAccessibleForFree` states the thing people most often ask
+			before typing their medication into a stranger's website.
 		-->
 		<script type="application/ld+json">
 			{
@@ -56,7 +63,12 @@
 				"applicationCategory": "HealthApplication",
 				"operatingSystem": "Any",
 				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
-				"license": "https://www.gnu.org/licenses/agpl-3.0.html"
+				"isAccessibleForFree": true,
+				"inLanguage": ["en", "fr", "de", "pt", "it"],
+				"license": "https://www.gnu.org/licenses/agpl-3.0.html",
+				"codeRepository": "https://github.com/luiscmmarques/graftful",
+				"screenshot": "https://graftful.app/screenshots/today-wide.png",
+				"privacyPolicy": "https://graftful.app/privacy"
 			}
 		</script>
 

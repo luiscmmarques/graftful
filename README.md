@@ -12,8 +12,8 @@ npm run dev
 Open the app and press **Load example regimen** — that fills it with a real post-transplant regimen so you can see it working before entering your own.
 
 ```sh
-npm test      # 156 unit tests
-npx playwright test  # 16 app + 3 offline
+npm test      # 157 unit tests
+npx playwright test  # 17 app + 3 offline
 npm run check # types
 npm run build # static output in build/, with the offline precache
 npm run preview

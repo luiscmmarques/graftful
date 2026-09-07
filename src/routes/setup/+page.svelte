@@ -596,6 +596,8 @@
 <svelte:head>
 	<title>{$t.setup.title} · Graftful</title>
 	<meta name="description" content={$t.setup.metaDescription} />
+	<!-- Prerenders to "Loading…" with no local database. See the note in stock/+page.svelte. -->
+	<meta name="robots" content="noindex, follow" />
 </svelte:head>
 
 <h2>{$t.setup.title}</h2>

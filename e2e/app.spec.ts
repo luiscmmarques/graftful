@@ -49,6 +49,37 @@ test('every screen has its own page title', async ({ page }) => {
 	}
 });
 
+test('the app screens are kept out of search results, and the content pages are not', async ({
+	page
+}) => {
+	/*
+	 * src/lib/seo.test.ts checks the source. This checks the response, which is the only place
+	 * the answer actually matters: a `svelte:head` tag that never reaches the prerendered HTML
+	 * is a page Google indexes as "Loading…" while every test in the repository passes.
+	 */
+	for (const path of ['/stock', '/order', '/setup']) {
+		await page.goto(path);
+		await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+			'content',
+			/noindex/,
+			`${path} prerenders to "Loading…" and must not be indexable`
+		);
+	}
+
+	for (const path of ['/', '/about', '/privacy', '/roadmap', '/support']) {
+		await page.goto(path);
+		/*
+		 * These are the trust surface — the pages someone reads before deciding whether to type
+		 * their medication into a stranger's website — so a noindex leaking onto one of them
+		 * would quietly remove the app from search.
+		 */
+		await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(
+			0,
+			`${path} is a content page and must stay indexable`
+		);
+	}
+});
+
 test('the wordmark returns to Today', async ({ page }) => {
 	await page.goto('/stock');
 	await page.getByRole('link', { name: 'Graftful' }).click();

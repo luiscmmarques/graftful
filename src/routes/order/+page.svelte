@@ -77,6 +77,8 @@
 <svelte:head>
 	<title>{$t.order.title} · Graftful</title>
 	<meta name="description" content={$t.order.metaDescription} />
+	<!-- Prerenders to "Loading…" with no local database. See the note in stock/+page.svelte. -->
+	<meta name="robots" content="noindex, follow" />
 </svelte:head>
 
 <h2>{$t.order.title}</h2>

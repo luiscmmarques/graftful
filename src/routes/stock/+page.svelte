@@ -78,6 +78,18 @@
 <svelte:head>
 	<title>{$t.stock.title} · Graftful</title>
 	<meta name="description" content={$t.stock.metaDescription} />
+	<!--
+		Kept out of search results. This screen prerenders to the word "Loading…" — every
+		number on it comes from the local database, which no crawler has — so an indexed
+		result would show a page that looks broken, competing with the content pages that
+		are the actual reason someone finds this app.
+
+		Deliberately a meta tag and not a robots.txt Disallow: a disallowed URL can still be
+		indexed from a link, and blocking the crawl is what stops Google ever reading this
+		line. src/lib/seo.test.ts requires every route to be either in the sitemap or marked
+		this way, never both and never neither.
+	-->
+	<meta name="robots" content="noindex, follow" />
 </svelte:head>
 
 <h2>{$t.stock.title}</h2>
