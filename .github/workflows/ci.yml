@@ -19,7 +19,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gate:
+  # The job id is the status check name GitHub offers to branch protection, so it is not a
+  # private label: `verify` matches the sibling projects, which means one branch protection
+  # rule reads the same everywhere instead of being `gate` here and `verify` next door.
+  #
+  # Renaming it again is not free. A required status check is stored as a plain string, so a
+  # rename orphans the rule — GitHub waits for a check that no longer reports and every pull
+  # request blocks until the rule is updated by hand.
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
