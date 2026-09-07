@@ -13,6 +13,40 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
+  #
+  # Cloudflare currently overrides the two values above. Its "Add security headers" managed
+  # transform is enabled on the zone, and production answers with `X-Frame-Options: SAMEORIGIN`
+  # and `Referrer-Policy: same-origin` however this file is written — verified against the live
+  # domain, while HSTS and the cache rules from this same file arrive intact. Neither
+  # substitution is dangerous: `frame-ancestors 'none'` below is what actually blocks framing
+  # and takes precedence over X-Frame-Options in every current browser, and `same-origin` is
+  # the stricter referrer choice. The values here are kept as the intended policy rather than
+  # edited to match, so that turning the transform off needs no change to this file.
+  # `.github/workflows/headers.yml` checks what the live domain really sends, because a test
+  # over this file cannot see a dashboard setting.
+  #
+  # Capabilities the app never uses, refused rather than merely unused. This is the promise in
+  # the privacy note stated as a header: an app that cannot reach the camera, the microphone or
+  # the location cannot leak them, whatever a future dependency tries. `browsing-topics=()`
+  # opts out of Chrome's Topics API, which would otherwise let the browser derive advertising
+  # interests from a visit to a transplant medication tracker.
+  #
+  # `clipboard-write` is deliberately NOT listed. Copying the pharmacy order is how the order
+  # actually reaches the pharmacy — see the copy button in src/routes/order/+page.svelte — and
+  # denying it here would break that screen silently, with the button doing nothing and no
+  # error anywhere. The stock "deny everything" list in most hardening guides does exactly
+  # that. src/lib/headers.test.ts fails if it is ever added.
+  Permissions-Policy: accelerometer=(), autoplay=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), gamepad=(), geolocation=(), gyroscope=(), hid=(), idle-detection=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()
+  #
+  # No cross-origin window ever opens one of these documents, and none of them opens one. This
+  # severs `window.opener` both ways, so anything reached from here cannot reach back in.
+  #
+  # Cross-Origin-Resource-Policy is deliberately absent. It was considered and rejected: no
+  # resource on this origin is confidential — the regimen lives in IndexedDB, which no request
+  # can reach — and the assets that are used off-origin exist *for* that, since the lockups are
+  # for the README and printed handouts and the social card is fetched by whatever is unfurling
+  # a link. The header would protect nothing here and put link previews at risk.
+  Cross-Origin-Opener-Policy: same-origin
   # No third-party scripts at all, and no outbound connections carrying health data.
   # The full policy is generated in vite.config.ts and delivered in a <meta> tag, because
   # its hashes have to describe the bundle that actually shipped. `frame-ancestors` stays

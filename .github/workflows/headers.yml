@@ -1,0 +1,43 @@
+# What the live domain sends, checked on a schedule.
+#
+# Separate from ci.yml on purpose, and deliberately not part of the gate. This checks
+# production, which lags a push by a minute or two, so running it on every commit would fail
+# briefly after every deploy — and a check that cries wolf weekly is a check nobody reads.
+#
+# It exists because of a real gap: src/lib/headers.test.ts checks static/_headers, and cannot
+# see that Cloudflare's "Add security headers" managed transform overrides two of those values
+# on the zone. The repository asserted X-Frame-Options: DENY while production answered
+# SAMEORIGIN, and no test over the repository could ever have noticed. This is also the only
+# thing that would catch a dashboard change made months from now by someone clicking through
+# Cloudflare's UI, or a security.txt that quietly passed its Expires date.
+name: Live headers
+
+on:
+  schedule:
+    # Mondays, early. Weekly is often enough for configuration that changes by hand, and the
+    # security.txt expiry warning has thirty days of margin behind it.
+    - cron: '17 6 * * 1'
+  # So it can be run straight after a deploy without waiting for Monday.
+  workflow_dispatch:
+
+concurrency:
+  group: live-headers
+  cancel-in-progress: true
+
+jobs:
+  headers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          # .nvmrc so this and Cloudflare Pages cannot disagree about the runtime.
+          node-version-file: .nvmrc
+
+      # No npm install: the script uses only node:fs and global fetch, so there is nothing to
+      # resolve and nothing that a supply-chain problem in a dev dependency could influence.
+      - name: The live domain sends every header the app depends on
+        run: node scripts/check-live-headers.mjs

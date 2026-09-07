@@ -149,3 +149,81 @@ test('every document is served no-transform, so nothing can be injected into it'
 		);
 	}
 });
+
+/** The capabilities refused for every path, parsed out of the Permissions-Policy line. */
+function refusedCapabilities(): Set<string> {
+	const line = DIRECTIVES.split('\n').find((l) =>
+		l.trim().toLowerCase().startsWith('permissions-policy:')
+	);
+	if (!line) return new Set();
+	const value = line.slice(line.indexOf(':') + 1);
+	// `name=()` is a refusal. `name=(self)` or `name=*` would be a grant, so only `()` counts.
+	return new Set([...value.matchAll(/([a-z-]+)\s*=\s*\(\s*\)/g)].map((m) => m[1]));
+}
+
+test('the capabilities this app never uses are refused, not merely unused', () => {
+	/*
+	 * An app that cannot reach the camera, the microphone or the location cannot leak them,
+	 * whatever a future dependency decides to try. This is the privacy note's promise expressed
+	 * as something a browser enforces rather than something a reader has to trust.
+	 */
+	const refused = refusedCapabilities();
+	for (const capability of [
+		'camera',
+		'microphone',
+		'geolocation',
+		'usb',
+		'serial',
+		'bluetooth',
+		'hid',
+		'payment',
+		'display-capture',
+		'idle-detection'
+	]) {
+		assert.ok(
+			refused.has(capability),
+			`Permissions-Policy in static/_headers does not refuse ${capability}. The app never ` +
+				'uses it, so leaving it available is a capability granted for nothing.'
+		);
+	}
+});
+
+test('Chrome cannot derive advertising interests from a visit', () => {
+	/*
+	 * The Topics API replaced FLoC and is on by default. Left alone, the browser is free to note
+	 * that someone visited a transplant medication tracker and hand that inference to advertisers
+	 * — an outcome this app spends its whole architecture avoiding, arriving through the browser
+	 * rather than through the app. `interest-cohort=()` is the dead FLoC opt-out and is not a
+	 * substitute.
+	 */
+	assert.ok(
+		refusedCapabilities().has('browsing-topics'),
+		'Permissions-Policy must refuse browsing-topics, or the browser may still profile a visit.'
+	);
+});
+
+test('copying the pharmacy order is not refused by the capability policy', () => {
+	/*
+	 * The trap this test exists for. `clipboard-write` appears in essentially every published
+	 * "deny everything" Permissions-Policy, and the copy button in src/routes/order/+page.svelte
+	 * is how the order actually reaches the pharmacy. Refuse it and the button does nothing, with
+	 * no error in the console and nothing to suggest a header is responsible — on the one screen
+	 * whose entire purpose is producing that text.
+	 */
+	const refused = refusedCapabilities();
+	for (const capability of ['clipboard-write', 'clipboard-read']) {
+		assert.ok(
+			!refused.has(capability),
+			`Permissions-Policy refuses ${capability}, which silently breaks the copy button on ` +
+				'the Order screen. Remove it — that button is how the order reaches the pharmacy.'
+		);
+	}
+});
+
+test('documents sever window.opener in both directions', () => {
+	assert.ok(
+		/cross-origin-opener-policy:\s*same-origin/i.test(DIRECTIVES),
+		'static/_headers must set Cross-Origin-Opener-Policy: same-origin, so a page opened from ' +
+			'this app cannot reach back into it through window.opener.'
+	);
+});
