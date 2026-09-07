@@ -80,7 +80,7 @@ Ordering and receiving are separate events. Ordering records the request and sil
 
 The app records clinical data but never acts on it. It does not derive doses, interpret lab values, warn about interactions, or advise on a missed dose. See `DECISIONS.md` for the full list and the reasoning — that boundary is what keeps this outside medical-device regulation, and it is not negotiable feature by feature.
 
-`STACK.md` covers the stack, `COSTS.md` what it costs to run, `SPREADING.md` how to reach the people it was built for, `TODO.md` what is left.
+`STACK.md` covers the stack, `DEPLOY.md` the git flow and the deploy runbook, `COSTS.md` what it costs to run, `SPREADING.md` how to reach the people it was built for, `TODO.md` what is left.
 
 ## Design
 
