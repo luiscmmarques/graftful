@@ -12,7 +12,7 @@
 		"dev": "vite dev",
 		"build": "vite build && node scripts/check-inline-css.mjs",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "git config core.hooksPath .githooks 2>/dev/null; svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest --run",
 		"test:watch": "vitest",

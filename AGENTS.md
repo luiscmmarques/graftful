@@ -21,9 +21,15 @@ Before claiming anything works: `npm run check && npm test && npm run build`. Al
 
 Markdown prose is not hard-wrapped: `proseWrap: 'never'` in `prettier.config.js` keeps each paragraph on one line, so write it that way rather than inserting manual line breaks for `format` to undo. This also removed an old instability where an inline code span split across two lines made `lint` fail straight after `format`.
 
+## Never commit to main
+
+`main` is protected and requires the `verify` job to pass. Work rides a branch — `feature/<name>` for new behaviour, `fix/<name>` for repairs, nothing else — and reaches `main` only through a squash-merged pull request. Push a branch, open the PR, let CI go green, squash and merge, then delete the branch.
+
+`DEPLOY.md` is the runbook: the flow, the branch protection, the Cloudflare settings that are load-bearing but invisible from here, and the two traps that have already caused confusion — squash merges making SHA-based merge checks report unmerged work that is merged, and the scheduled `headers` job being unusable as a required status check because it never runs on a pull request.
+
 ## Two standing checks on every change
 
-**No personal data in a commit.** This repository has already leaked a personal mailbox, a work address and the maintainer's home town — each written in good faith as useful context, each scrubbed by hand later, and the ones that reached git history are permanent. `scripts/check-personal-data.mjs` scans for the known patterns; the pre-commit hook in `.githooks/` runs it against staged content (enable once per clone with `git config core.hooksPath .githooks`), and `src/lib/personal-data.test.ts` runs the same scan in `npm test`, so CI catches a bypassed hook. A false positive means refining the rule in the script, never skipping the check. The transplant story on the About page (hospital, date) is deliberately public and deliberately not guarded.
+**No personal data in a commit.** This repository has already leaked a personal mailbox, a work address and the maintainer's home town — each written in good faith as useful context, each scrubbed by hand later, and the ones that reached git history are permanent. `scripts/check-personal-data.mjs` scans for the known patterns; the pre-commit hook in `.githooks/` runs it against staged content (installed by `npm install`, via the `prepare` script), and `src/lib/personal-data.test.ts` runs the same scan in `npm test`, so CI catches a bypassed hook. A false positive means refining the rule in the script, never skipping the check. The transplant story on the About page (hospital, date) is deliberately public and deliberately not guarded.
 
 **Docs are revisited when behaviour changes.** A feature is not finished until the prose still tells the truth: reread README.md, TODO.md, STACK.md and DECISIONS.md — and this file — for anything the change made stale. The usual casualties are counts (tests, languages, screens), "not yet built" claims about something that now exists, and decision records whose premise the change just removed. Stale docs here have already caused real work: the language count, the pages checklist and the telemetry stance all drifted from reality and had to be reconciled in bulk.
 

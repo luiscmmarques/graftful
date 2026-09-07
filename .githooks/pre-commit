@@ -1,7 +1,9 @@
 #!/bin/sh
-# Blocks a commit that stages personal data. One-time setup after cloning:
+# Blocks a commit that stages personal data.
 #
-#   git config core.hooksPath .githooks
+# Installed by `npm install`, which runs `git config core.hooksPath .githooks` from the
+# `prepare` script. Note that this repository-local setting takes precedence over any
+# hooksPath configured globally or system-wide — see DEPLOY.md.
 #
 # The same scan runs in the unit tests, so bypassing the hook only moves the
 # failure to CI. Patterns and reasoning: scripts/check-personal-data.mjs.
