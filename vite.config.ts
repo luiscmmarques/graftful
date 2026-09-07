@@ -6,6 +6,37 @@ import type { ManifestOptions } from 'vite-plugin-pwa';
 import { execSync } from 'node:child_process';
 
 /**
+ * The ceiling for folding a stylesheet into the prerendered documents.
+ *
+ * Every route's CSS in this app is small — the largest is the layout's, and most are a few
+ * hundred characters — but each one shipped as a `<link rel="stylesheet">` blocks the first
+ * paint until it arrives. Lighthouse measured three such requests on the Today page at
+ * roughly 300 ms each on a throttled phone, to deliver about 3 KB between them: round trips,
+ * not bytes, with the connection idle almost the whole time. Inlining them moved first paint
+ * from 1224 ms to 944 ms and took the blocking requests to zero.
+ *
+ * The number is a ceiling rather than a target, and it is deliberately only a little above
+ * the largest stylesheet the app currently has. A genuinely large stylesheet should *not* be
+ * inlined: it would be duplicated into all nine prerendered documents, which costs more than
+ * the round trip it saves.
+ *
+ * It also fails silently in the direction that matters. A stylesheet that grows one character
+ * past this limit goes back to being a render-blocking request, and nothing anywhere says so
+ * — the cost lands on first-time visitors on slow connections, the people least able to tell
+ * it is the app's fault and least likely to report it. So `scripts/check-inline-css.mjs`
+ * enforces it after every build, and reads this constant rather than repeating the number,
+ * because two copies of a value that must agree is the failure it exists to prevent.
+ *
+ * That check is a post-build script rather than a Vite plugin hook for a reason worth not
+ * rediscovering: throwing from `writeBundle` does abort the build, but it aborts it early,
+ * leaving the client output incomplete, and `vite-plugin-pwa` then fails at `closeBundle`
+ * because it cannot read `service-worker.js`. That misleading error is the only one the
+ * maintainer sees. Nor is it a unit test, because the fact only exists once a build has run:
+ * `npm test` sees source, where no stylesheet has been emitted yet.
+ */
+const INLINE_STYLE_THRESHOLD = 5120;
+
+/**
  * A human-readable build identifier.
  *
  * Caching is already handled by content hashes in asset filenames — this is not for that.
@@ -148,6 +179,19 @@ export default defineConfig({
 			 * once anything is passed to the plugin here.
 			 */
 			serviceWorker: { register: false },
+			/*
+			 * Stylesheets travel inside the documents rather than beside them, so no route
+			 * pays a round trip for a few hundred characters of CSS before it can paint. The
+			 * threshold, the measured effect and the reason it is a ceiling are all recorded
+			 * at INLINE_STYLE_THRESHOLD; scripts/check-inline-css.mjs keeps it honest.
+			 *
+			 * Two things make this safe here specifically. The generated policy below already
+			 * allows `'unsafe-inline'` for `style-src`, which Svelte's scoped styles need
+			 * anyway, so nothing is blocked. And offline is unaffected: the CSS becomes part
+			 * of documents the service worker already precaches, and the standalone files
+			 * are still emitted for client-side navigation.
+			 */
+			inlineStyleThreshold: INLINE_STYLE_THRESHOLD,
 			/*
 			 * The fallback is named 404.html, and the name is the whole point.
 			 *

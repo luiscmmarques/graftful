@@ -129,7 +129,7 @@ graftful/
     routes/          SvelteKit: prerendered content + app routes
     service-worker.ts
   e2e/               Playwright, including the offline suite
-  scripts/           icon and lockup generation
+  scripts/           icon and lockup generation, plus the pre-commit and post-build guards
   static/            icon sources, generated rasters, launch images, _headers
   private/           real regimen for import, gitignored
 ```

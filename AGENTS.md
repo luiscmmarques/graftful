@@ -13,7 +13,7 @@ npm test           # Vitest, 148 tests
 npm run check      # svelte-check. Must be 0 errors AND 0 warnings.
 npm run lint       # Prettier check
 npm run format     # Prettier write
-npm run build      # static output in build/
+npm run build      # static output in build/, then the render-blocking stylesheet guard
 npm run preview    # serves the real build — the only way to test offline
 ```
 
