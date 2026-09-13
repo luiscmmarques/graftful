@@ -93,27 +93,19 @@ There is deliberately no runtime fallback. A key enters the catalogue only once 
 
 Paraglide was the original choice and was not used. At this size the whole mechanism is about forty lines, and it costs no build step.
 
+The four non-English catalogues load on demand; English stays a static import. Five static imports put all five languages in one chunk with Dexie — 99 KB gzipped, on the critical path of every route, four fifths of it text the visitor would never read. Splitting them took a first visit from 154 KB to 105 KB and the largest contentful paint from 2.1 s to 1.8–2.0 s on every screen. English stays static because it defines the type, it is the fallback for unsupported languages, and it is what the prerendered documents already contain. `src/lib/i18n/index.ts` records what the split costs and the flash it must not cause.
+
 ### `wrangler.toml`, not Terraform — v2, not built
 
 One zone, one Pages project, one Worker, one database. Terraform's Cloudflare provider is reasonable but the setup is small enough that checked-in `wrangler.toml` plus a documented bootstrap is honest rather than lazy. Revisit if a second environment stops being a branch.
 
 ## Telemetry — decided
 
-**None.** No analytics, no beacon, no third-party script of any kind. Cloudflare Web Analytics was the chosen alternative to GA4 and shipped behind an environment variable; the token was never set, so it never collected anything, and it has been removed rather than finished. The reasoning and the accepted cost are in `DECISIONS.md`.
+**None.** No analytics, no beacon, no third-party script of any kind. In v1 nothing leaves the device at all; from v2 the only thing that ever will is a push subscription, if reminders are switched on. No health data, no identifier, no account.
 
-What that leaves, and what it does not:
+That is the whole stance. Which options were considered and why they were refused is in `DECISIONS.md`, and what was physically removed from the codebase is in `TODO.md` § 4 — both are recorded once, there rather than here, because a stance restated in three files is a stance that will disagree with itself.
 
-- **Acquisition is still measurable**, from Cloudflare's edge HTTP traffic. It reports by path, so a flyer landing on `/cto` or `/flyer` shows up as a real document request. Acquisition channels should therefore be **distinct paths**, not `?src=` query strings, since a query parameter is not broken out as its own dimension.
-
-  Not yet consistent with the rest of the project: `SPREADING.md` and the calendar export both use `?src=`, which was written before this constraint was understood. The `?src=` links are harmless and self-documenting for a human reading a calendar entry, but they should not be relied on for attribution. Either add the paths or stop expecting the numbers — recorded here rather than quietly left contradictory.
-
-- **Engagement is not measurable.** Once the service worker is installed it answers navigations from cache and in-app moves are client-side routing, so nothing after the first load reaches the edge. An offline-first PWA is invisible to server-side analytics by design, which is the same property that makes it work on a hospital connection.
-
-If product-event counters become necessary, the first-party `POST /e` design is in `TODO.md` → Deferred. The first decision that depends on measurement has now arrived — keep-or-retire needs to know whether anyone uses the app — and the staged plan for it is in `TODO.md` § 4: edge traffic and distinct paths first, the counter only if retention becomes the question.
-
-The resulting position is the strong one: in v1 **nothing leaves the device at all**. From v2, the only thing that ever will is a push subscription, if reminders are switched on. No health data, no identifier, no account.
-
-Community statistics — publishing aggregate figures on medication burden — is **deferred**, and reframed as an anonymous survey rather than background collection. The constraints that would apply are recorded in `TODO.md` → Deferred, including small-cell suppression and the requirement to self-host the form rather than embed a Google Form, which would reintroduce exactly the third-party leak GA4 was rejected for.
+Community statistics — publishing aggregate figures on medication burden — is **deferred**, and framed as an anonymous survey the reader chooses to answer rather than anything collected in the background. The constraints are in `TODO.md` → Deferred, including small-cell suppression and the requirement to self-host the form rather than embed a Google Form, which would reintroduce exactly the third-party leak GA4 was rejected for.
 
 ## Repository layout
 
@@ -142,12 +134,18 @@ Enforced by `.github/workflows/ci.yml` on every push to `main` and every pull re
 
 - `npm run lint` (Prettier), `npm run check` (`svelte-check`), `npm test` (Vitest) and `npx playwright test` all green, including the spreadsheet regression suite and the offline suite.
 - `static/lockup.svg` regenerates identically from `scripts/wordmark.json`, so the committed logo cannot drift from its source. The icon rasters are deliberately not checked this way: the social card and launch images contain text rendered by the host's font stack, so their bytes differ legitimately between macOS and Linux.
-- `src/lib/headers.test.ts` fails if a route has no cache rule.
+- `src/lib/headers.test.ts` fails if a route has no cache rule, and if an unhashed image has no bounded `max-age` — the header lockup used to be refetched on every visit.
 - `transfer.roundtrip.test.ts` stops compiling if a model field is added without being handled in both directions of the backup.
+- `scripts/check-inline-css.mjs` fails the build if a stylesheet outgrows `inlineStyleThreshold` and goes back to blocking the first paint.
+
+Measured September 2026, on the real build under `npm run preview`, Lighthouse mobile with simulated throttling:
+
+- Performance 99–100 on all four app screens. First contentful paint 1.0–1.2 s, largest contentful paint 1.8–2.0 s, total blocking time 0 ms, cumulative layout shift 0.006 or less. Ranges rather than single figures because simulated throttling varies by a tenth of a second between runs; a change worth claiming has to beat that.
+- A cold first load of Today transfers about 105 KB, of which 47 KB is the one critical chunk: Dexie plus the English catalogue. The precache is 665 KB including icons and launch images.
+- Largest contentful paint is gated on JavaScript by design and cannot be fixed in the shell. Every prerendered document says "Loading…" — the regimen lives in IndexedDB, so nothing meaningful can paint until the bundle boots and the database answers. Shrinking that chunk is the only lever on it.
 
 Intended but **not** currently measured, so not claimed as gates:
 
-- App shell under 150 KB gzipped. The precache is around 440 KB including icons; the shell itself has not been measured separately.
 - Lighthouse: PWA installable, accessibility ≥ 95.
 - No new runtime dependency without a line in `DECISIONS.md`. This one is a habit, not a check — `dexie` is still the only runtime dependency.
 

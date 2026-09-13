@@ -103,7 +103,7 @@ This is why `.github/workflows/headers.yml` exists: it checks the response rathe
 
 ## What already ships in the repo
 
-- `static/_headers`: immutable caching for hashed assets, `no-cache` and `no-transform` documents, a `Permissions-Policy` refusing every capability the app never uses, and `Cross-Origin-Opener-Policy`. Guarded by `src/lib/headers.test.ts`.
+- `static/_headers`: immutable caching for hashed assets, a bounded `max-age` for the images whose filenames carry no hash, `no-cache` and `no-transform` documents, a `Permissions-Policy` refusing every capability the app never uses, and `Cross-Origin-Opener-Policy`. Guarded by `src/lib/headers.test.ts`, and checked against the live domain by `scripts/check-live-headers.mjs` — only production can show Cloudflare's Browser Cache TTL rewriting any of it.
 - The Content-Security-Policy is generated in `vite.config.ts`, not written by hand, so its hashes describe the bundle that actually shipped. `connect-src` is `'self'` and nothing else can be reached.
 - `.github/workflows/ci.yml`: prettier, svelte-check, unit tests, build, Playwright including the offline suite, and a check that the committed lockup matches its source. This is the merge gate.
 - `.github/workflows/headers.yml`: the weekly check against the live domain.

@@ -60,7 +60,7 @@ Print in the local language. In Valais that means French; in a German-speaking c
 
 ## Where links come from
 
-The app tags a few entry points so it is possible to tell what is working, without tracking anyone:
+A few entry points get their own link, so a printed handout and a calendar entry are distinguishable from each other:
 
 | Source              | Link                      |
 | ------------------- | ------------------------- |
@@ -69,9 +69,7 @@ The app tags a few entry points so it is possible to tell what is working, witho
 | Coordinator handout | `graftful.app/?src=cto`   |
 | Online groups       | `graftful.app/?src=forum` |
 
-These are page views, nothing more — no cookies, no identifiers, no profile. The calendar one exists because a shared calendar entry is a genuinely likely way this spreads, and it would be useful to know that.
-
-One caveat, recorded rather than glossed over: there is no analytics beacon at all (see `DECISIONS.md`), so acquisition is read from Cloudflare's edge HTTP traffic, which reports by **path**. An arbitrary query string is not broken out. `STACK.md` therefore prefers distinct paths (`/flyer`, `/cto`) over `?src=`. The `?src=` links above are still worth keeping — they are self-explanatory to a human reading a calendar entry a year later — but do not plan on them producing a clean count until the paths exist.
+Nothing in the app reads the query string — no cookies, no identifiers, no profile. They are there to be self-explanatory to a human: a coordinator holding the handout, or someone finding a shared calendar entry a year later and wondering where it came from. The calendar one exists because a shared calendar entry is a genuinely likely way this spreads.
 
 ## Pace
 
