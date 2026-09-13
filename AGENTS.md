@@ -9,7 +9,7 @@ Read `DECISIONS.md` before proposing a feature. It records what was rejected and
 ```sh
 npm install
 npm run dev        # localhost:5173. Service worker is OFF in dev, on purpose.
-npm test           # Vitest, 157 tests
+npm test           # Vitest. Counts live in TODO.md § 0b, not in four files that drift.
 npm run check      # svelte-check. Must be 0 errors AND 0 warnings.
 npm run lint       # Prettier check
 npm run format     # Prettier write
@@ -32,6 +32,8 @@ Markdown prose is not hard-wrapped: `proseWrap: 'never'` in `prettier.config.js`
 **No personal data in a commit.** This repository has already leaked a personal mailbox, a work address and the maintainer's home town — each written in good faith as useful context, each scrubbed by hand later, and the ones that reached git history are permanent. `scripts/check-personal-data.mjs` scans for the known patterns; the pre-commit hook in `.githooks/` runs it against staged content (installed by `npm install`, via the `prepare` script), and `src/lib/personal-data.test.ts` runs the same scan in `npm test`, so CI catches a bypassed hook. A false positive means refining the rule in the script, never skipping the check. The transplant story on the About page (hospital, date) is deliberately public and deliberately not guarded.
 
 **Docs are revisited when behaviour changes.** A feature is not finished until the prose still tells the truth: reread README.md, TODO.md, STACK.md and DECISIONS.md — and this file — for anything the change made stale. The usual casualties are counts (tests, languages, screens), "not yet built" claims about something that now exists, and decision records whose premise the change just removed. Stale docs here have already caused real work: the language count, the pages checklist and the telemetry stance all drifted from reality and had to be reconciled in bulk.
+
+The durable fix for that is one home per fact, and it is now the rule rather than an aspiration. **Do not copy a figure or a process into a second file — link to where it lives.** Test counts and build status live in `TODO.md` § 0b; measured performance figures in `STACK.md` → Budgets and gates; the branch flow and the Cloudflare settings in `DEPLOY.md`; rejected features and their reasoning in `DECISIONS.md`. Every one of those had two copies at some point and every pair disagreed inside a month — a performance table describing a stylesheet the build no longer emits, a CI section describing direct pushes to a protected branch, an end-to-end count that was wrong in one file and right in another. A second copy is not redundancy, it is a future contradiction.
 
 ## The boundary that must not be crossed
 
@@ -141,3 +143,5 @@ Prose comments explaining _why_, not _what_. The interesting comments in this co
 UI copy is plain and unhurried. The audience is people managing a lifelong condition, many of them older; some are newly transplanted and frightened. No exclamation marks, no gamification, no streaks, no cheerfulness about medication. Tap targets never below `--tap` (2.75rem). Sizes in `rem` so OS text scaling works.
 
 UI copy lives in `src/lib/i18n`, one typed catalogue per language, English defining the type. Five languages ship — English, French, German, Portuguese, Italian — and there is no runtime fallback, so a new key must be written in all five or `npm run check` fails. A handful of strings are deliberately left in English with the reason recorded at each site: ledger notes persisted to the database, the two errors thrown by `src/lib/db/index.ts`, the import warnings in `src/lib/domain/transfer.ts`, and the static Open Graph tags in `src/app.html`.
+
+The four non-English catalogues are loaded with `import()`, not statically. Five static imports put every language in one chunk with Dexie — 99 KB gzipped on the critical path of every route, four fifths of it never read — so do not collapse them back. A sixth language goes in the `LAZY` map in `src/lib/i18n/index.ts`, where the compiler will insist on it. Two properties must survive any change there: `t` always holds a complete catalogue, because every component reads `$t.x.y` synchronously; and switching language keeps the previous one on screen until the new one has loaded, rather than flashing through English. Anything lazy must also stay inside the service worker's precache glob, or changing language stops working offline — `e2e/offline.spec.ts` is what catches that.

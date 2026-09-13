@@ -36,7 +36,7 @@ Two consequences worth keeping:
 | -------------------------------------- | ------------------------- |
 | Therapies, dose versions, compositions | Web Push reminders        |
 | Stock ledger, refill, recount          | Push subscription API, D1 |
-| Joint replenishment + order list       | Product-event counters    |
+| Joint replenishment + order list       |                           |
 | `.ics` reminder export                 |                           |
 | Days-since-transplant counter          |                           |
 | Export / import JSON                   |                           |
@@ -44,11 +44,9 @@ Two consequences worth keeping:
 
 AGPL note: the app already ships its code to the browser, so satisfying the source offer is a link to the repository from the About page. Minified output is object code, so that link is the Corresponding Source obligation — cheap to comply with, worth doing deliberately rather than by accident.
 
-- [ ] Confirm whether Workers Analytics Engine is available on the current plan. Only relevant if product-event counters are ever added (see Deferred).
-
 ## 0b. Build status
 
-Working and testable: `npm run dev`. 157 unit tests, 17 app and 3 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
+Working and testable: `npm run dev`. 158 unit tests, 17 app and 4 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
 
 - [x] SvelteKit + Svelte 5 + Vite, `adapter-static`, every route prerendered
 - [x] Domain layer at `src/lib/domain`, still dependency-free
@@ -99,7 +97,7 @@ Deliberately no runtime fallback: a key enters the catalogue only once all five 
 - [x] ~~Cloudflare beacon token, once the domain and account exist~~ — not needed; analytics removed entirely
 - [x] **`targetHorizonDays` defaults to 30** (see the note below)
 - [ ] Epsilonapril appeared on the real order despite 600 days of recorded cover — either the spreadsheet quantity is wrong or it is topped up out of habit
-- [x] Playwright, including the offline test — 16 app tests and 3 offline tests that stop the origin rather than emulating it
+- [x] Playwright, including the offline suite, which stops the origin rather than emulating it (counts in § 0b)
 - [x] GitHub Actions: format, types, unit, build and end-to-end on every push and pull request (`.github/workflows/ci.yml`)
 - [ ] Deployment itself is left to Cloudflare Pages' own git build, so there is one way to ship rather than two. Revisit only if a deploy needs a step Pages cannot do.
 
@@ -250,26 +248,11 @@ Web Push, when built:
 
 ## 4. Telemetry — none
 
-**Decided: no client-side telemetry at all.** GA4 was rejected, Cloudflare Web Analytics was chosen instead, its plumbing shipped behind `PUBLIC_CF_BEACON_TOKEN`, the token was never set — and rather than finish it, the beacon was removed. Both decisions and the accepted cost are in `DECISIONS.md`.
+**Decided: none, and the reasoning is in `DECISIONS.md` rather than repeated here.** What matters as status is what was taken out and what now enforces it.
 
-Removed with it: `src/lib/Analytics.svelte`, the `__CF_BEACON_TOKEN__` define and its `loadEnv` plumbing in `vite.config.ts`, the declaration in `src/app.d.ts`, `.env`, and — the part that actually matters — `https://static.cloudflareinsights.com` from `script-src` and `https://cloudflareinsights.com` from `connect-src`. The generated policy is now `'self'` and nothing else, which `e2e/app.spec.ts` already asserts by failing on any non-local request.
+Removed: `src/lib/Analytics.svelte`, the `__CF_BEACON_TOKEN__` define and its `loadEnv` plumbing in `vite.config.ts`, the declaration in `src/app.d.ts`, `.env`, and — the part that actually matters — `https://static.cloudflareinsights.com` from `script-src` and `https://cloudflareinsights.com` from `connect-src`.
 
-### What this deliberately does not measure
-
-Everything except arrival. Edge HTTP traffic sees the first document request and nothing after it: the service worker answers later navigations from cache, and moving between screens is client-side routing. So there is no way to know whether someone who landed on the app ever reached the Stock screen, let alone recorded a dose.
-
-**Revisited September 2026: a decision now depends on it.** The app costs real money to keep alive (domain, time), and keep-or-retire needs evidence that anyone uses it. That is exactly the trigger the previous paragraph reserved, so the plan is now staged rather than deferred indefinitely — starting with the option that changes nothing about the privacy claims:
-
-1. **Now, zero code:** read Cloudflare's edge HTTP traffic in the dashboard. Every first visit is a real document request, so it answers "is anyone arriving at all" — which is most of the keep-or-retire question — without a beacon, a script or a single byte from the client.
-2. **Now, small code:** add the distinct acquisition paths (`/flyer`, `/cto`, …) as redirects, so arrivals can be attributed to a channel. Still just document requests; the privacy page stays true word for word.
-3. **Only if arrivals look healthy but retention is the question:** the first-party `POST /e` counter sketched under Deferred. This is the first step that makes the app send anything, so it requires updating the privacy copy in all five languages and the e2e no-request assertion _in the same change_ — the privacy page must never lag the behaviour. The third-party beacon route is off the table: it would break the `'self'`-only CSP and reintroduce exactly what GA4 was rejected for.
-
-- [ ] Check the Cloudflare dashboard shows enough (visits over time, by path) to answer keep-or-retire; write down the threshold that would mean "retire" before looking at the numbers
-- [ ] **Use distinct paths, not query strings, for acquisition channels.** `/cto` and `/flyer` redirecting into the app are real document requests, so Cloudflare's edge HTTP traffic counts them. `?src=` is not broken out as its own dimension.
-
-### The resulting privacy position
-
-In v1, **nothing leaves the device — at all.** Not health data, not an identifier, not a pageview. From v2 the only thing that ever will is a push subscription, if reminders are switched on. That is a short, true, and unusually strong privacy note, and it is now testable rather than merely asserted: `e2e/app.spec.ts` fails if a single request reaches a non-local host. Worth protecting when future features are proposed.
+So in v1 **nothing leaves the device at all**, and that is testable rather than asserted: the generated policy is `'self'` and nothing else, and `e2e/app.spec.ts` fails if a single request reaches a non-local host. From v2 the only thing that ever will is a push subscription, if reminders are switched on. Worth protecting when future features are proposed.
 
 ## 5. Pages
 
@@ -470,31 +453,23 @@ Cloudflare's scan reliably imports `MX` and `TXT`. It is **less reliable with `S
 
 ## 11. CI/CD and the development lifecycle
 
-What exists today: GitHub Actions runs the full gate on every push and pull request, and Cloudflare Pages deploys `main` through its Git integration. Those are two independent systems, and that is the important thing to understand about the current setup.
+**The flow, the branch protection and the two traps in it live in `DEPLOY.md`, not here.** This section is status only. It used to carry its own copy of the branch-protection checklist and went stale into a contradiction: it still described `main` as taking direct pushes and the merge strategy as undecided, months after protection was switched on and squash merges became the rule. Two copies of a process is how that happens, so there is now one.
 
-**Production is not gated by tests.** A push to `main` is deployed by Cloudflare whether the Actions run passes, fails, or is still running. The original plan in this section chose Actions over the Git integration for exactly this reason, and then the Git integration was used anyway because it needs no credentials. The gap is not theoretical: the Content-Security-Policy that stopped the app booting was deployed to the live domain, and what caught it was opening the site in a browser, not the pipeline.
+The gap that checklist existed to close is closed. Production was once deployed by Cloudflare whether Actions passed, failed or was still running, and that was not theoretical — the Content-Security-Policy that stopped the app booting reached the live domain, and what caught it was opening the site in a browser. `main` now requires the `verify` job, so the gate sits before the merge rather than before the deploy.
 
-Closing it does not require moving deploys into Actions. Protecting `main` so that changes arrive through pull requests puts the gate before the merge instead of before the deploy, which reaches the same outcome with less machinery.
+- [ ] Add a post-deploy smoke check that would have caught that CSP breakage: load the live site in a headless browser, assert no console errors and that a click does something. A status code is not evidence the app runs, which is the whole lesson of that incident.
 
-### Branch protection and flow
+- [ ] **`CONTRIBUTING.md`.** Now writeable rather than aspirational: branch protection is on and changes do go through a branch, a preview build and a green gate, so the document would describe the flow rather than promise it.
 
-- [ ] Protect `main`: require a pull request before merging, and require the CI checks to pass. Settings are under **Settings → Branches → Add branch ruleset** for `main`.
-- [ ] Enable **Do not allow bypassing the above settings** — otherwise the rules apply to everyone except the repository owner, which on a single-maintainer project means they apply to nobody.
-- [ ] Require the specific check by name rather than "any check", so a renamed or deleted job cannot silently satisfy the requirement.
-- [ ] Work on branches named `feature/<short-name>` or `fix/<short-name>`, open a pull request, let Cloudflare build the preview and Actions run the gate, and merge only when both are green.
-- [ ] Decide the merge strategy, because it interacts with the single-commit convention. Squash merge keeps one commit per change on `main` and is the closest continuation of the current history; merge commits would make `main` a record of branches rather than of changes. Amending a published commit stops being appropriate once anything is merged, since `main` will no longer be safe to force-push.
-- [ ] Add a post-deploy smoke check that would have caught the CSP breakage: load the live site in a headless browser, assert no console errors and that a click does something. A status code is not evidence the app runs, which is the whole lesson of that incident.
-
-- [ ] **`CONTRIBUTING.md`, but only after the flow above actually works.** A contributing guide that describes a pull-request flow while `main` still takes direct pushes documents an aspiration, and the first outside contributor discovers the difference. Write it once branch protection is on and one change has genuinely gone through a branch, a preview build and a green gate — then the document is a description rather than a promise.
-
-  What it needs to cover, most of which already exists in scattered form: the four commands that must pass before anything is claimed to work (`check`, `test`, `build`, plus `format`), the branch naming and merge strategy settled above, the `(feat)` / `(fix)` commit prefix this history already uses, and a pointer to `AGENTS.md` — which is written for agents but is the shortest statement of the constraints a human contributor must not break either.
+  What it needs to cover, most of which already exists in scattered form: the four commands that must pass before anything is claimed to work (`check`, `test`, `build`, plus `format`), a pointer to `DEPLOY.md` for the branch flow and to `AGENTS.md` — written for agents, but the shortest statement of the constraints a human contributor must not break either.
 
   Two things a contributor cannot be expected to infer, and which belong at the top rather than buried: the medical-device boundary in `DECISIONS.md` is not negotiable feature by feature, so a pull request that derives a dose or interprets a lab value will be declined on principle rather than on quality; and a change to any type in `src/lib/domain/types.ts` drags the backup round-trip checklist with it, or a restore silently loses the field.
 
 ### Already in place
 
-- [x] `test` job on every push and PR: `npm test` — the domain suite is the regression baseline against the original spreadsheet and must stay green
-- [x] `build` job: type-check, bundle, assert the service worker and manifest are present in the output. Also builds with no `.env` file, which is how a clean clone and Cloudflare both build it — a missing variable used to fail the build and report a missing service worker, pointing nowhere near the cause.
+- [x] One job, `verify`, doing everything: format, types, unit tests, build, end-to-end, and the lockup-matches-its-source check. One job rather than several because it is the required status check, and a required check is stored as a plain string — see `DEPLOY.md` for what renaming it costs and when it runs.
+- [x] The unit suite is the regression baseline against the original spreadsheet and must stay green.
+- [x] The build runs with no `.env` file, which is how a clean clone and Cloudflare both build it. A missing variable used to fail the build and report a missing service worker, pointing nowhere near the cause.
 - [x] End-to-end suite in CI, all specs, no name filter. Filtering by name once hid a failing spec that only CI ran.
 - [x] Version stamped into the build and shown in the UI, so a user reporting a problem can say what they are running. Visible on `/about` and carried in the issue and mail links.
 - [x] ~~PR → deploy to `preview.graftful.app`, comment the URL on the PR.~~ Superseded: Cloudflare builds every branch at `<branch>.graftful.pages.dev` automatically.
@@ -510,37 +485,28 @@ Closing it does not require moving deploys into Actions. Protecting `main` so th
 
 ## 11a. Performance
 
-Measured against the live site on 1 September 2026, not estimated. The headline is that performance is currently fine, and this section exists so that stays true rather than because something is wrong.
+The headline is that performance is fine, and this section exists so that stays true rather than because something is wrong.
 
-| Measure                   | Value                            |
-| ------------------------- | -------------------------------- |
-| First contentful paint    | 384 ms                           |
-| DOM content loaded        | 380 ms                           |
-| Requests on first load    | 19                               |
-| Transferred on first load | 87.9 KiB                         |
-| Decoded on first load     | 224.9 KiB                        |
-| Service worker precache   | 54 entries, 466 KiB uncompressed |
+**The current figures live in `STACK.md` → Budgets and gates, and only there.** They used to be tabulated here as well and the two copies drifted apart within a month: this one still described a separate stylesheet after CSS was inlined into the documents, a 54-entry precache after it reached 60, and Dexie as 41% of the first load after five message catalogues had been added around it. A measurement worth keeping is worth keeping once. What belongs here is what `STACK.md` cannot hold — the history below, and what is still open.
 
-Where the bytes are:
+Where the bytes are, as a standing shape rather than a measurement:
 
-- **Dexie is the largest single dependency**: 106.4 KiB decoded, 35.8 KiB transferred, which is 41% of everything the first page pulls down. It is also load-bearing — `liveQuery` drives the reactive stores in four places, and replacing it means rewriting how every screen observes the database. Not worth doing for 36 KiB on an app people open a few times a day, and a refactor of the data layer is exactly the kind of change that loses someone's dose history. Recorded so the number is known, not as work to schedule.
-- **Each prerendered shell was 13.4 KiB on the day this was measured, and 86% of that is the `<head>`.** Only about 1 KiB is server-rendered content. There is no inline CSS at all; styles ship as a separate 4.5 KiB file. The app shells are 11.2 KiB in the current build, after the launch-image trim below.
-- **16 `apple-touch-startup-image` links are 3,705 bytes of every shell** — 32% of the app shells, and 32.6 KiB across all nine. They exist so an installed iOS app shows a splash image instead of a white screen while launching. It was 24 links and 5,553 bytes until the iPhone landscape tags were removed; see the trim below.
+- **Dexie is the largest single dependency and is load-bearing.** `liveQuery` drives the reactive stores in four places, so replacing it means rewriting how every screen observes the database. Not worth doing on an app people open a few times a day, and a refactor of the data layer is exactly the kind of change that loses someone's dose history. Recorded so it is not mistaken for an oversight.
+- **The prerendered shells are mostly `<head>`.** Only about 1 KiB of each is server-rendered content — the rest is metadata, the CSP hashes, the inlined route CSS and the iOS launch-image links.
+- **The `apple-touch-startup-image` links are the largest single block in every shell.** They exist so an installed iOS app shows a splash image instead of a white screen while launching. It was 24 links until the iPhone landscape tags were removed; see the trim below.
 
 That last one was the only real lever, and it is larger than it looks because of a decision recorded in `DECISIONS.md`: HTML is served `no-transform` to stop Cloudflare injecting a script, which also disables compression. These links are near-identical strings that gzip to a fraction of their size — the eight that were removed cost 1,848 bytes of every shell uncompressed and would have gzipped to 83, so with compression on the whole trim would have been invisible and not worth doing. The two decisions interact, and neither is visible from the other.
 
 - [x] **Trim the iOS launch images — done, and the lever was orientation rather than device size.** An iPhone launches a home-screen web app in portrait whatever way it is held, so the eight iPhone landscape media queries could never match at launch: dead weight in every shell for images iOS would never draw. iPads do rotate at launch and keep both orientations. Every device size stays, iPhone X and SE included — the audience skews older and those are phones in use, so nothing was dropped for being old. 24 links → 16 (4 iPads × 2 orientations, 8 iPhones × 1). Measured from the built output, not estimated: `build/index.html` 13,343 → 11,495 bytes (−13.9%), all nine shells together 144,568 → 127,936 bytes (−16.2 KiB), and the splash block itself 5,553 → 3,705 bytes per shell. The block figures are the exact ones to quote — a shell's total moves by a byte or two between builds because SvelteKit embeds a per-build id and a CSP hash in it — so the saving is precisely 1,848 bytes per shell and 16,632 across the nine. The eight orphaned PNGs were deleted by hand — the generator writes and never removes — taking 220,047 bytes (214.9 KiB) out of `static/`, which is repository and deploy weight rather than page weight since launch images are not precached. The precache is unchanged at 53 entries, confirmed by reading the built worker: it contains no `icons/splash/` entry at all, so the deletion could not have moved it. A white flash on iPhone launch was never at stake, which is why this did not need a phone in hand after all.
-- [ ] Re-measure after any change, and record the numbers here rather than describing them. Every figure above came from `performance.getEntriesByType` against production and from the built output, and each one contradicted a guess I had made first.
+- [x] **The five message catalogues were one chunk, and four fifths of it was never read.** Static imports of all five put every language together with Dexie: 283 KB raw, 99 KB gzipped, 64% of the page, and on the critical path of every route. Since each prerendered shell says only "Loading…" — the regimen is in IndexedDB — that chunk gated the largest contentful paint everywhere, which made it the only lever there was. The four non-English catalogues now load with `import()`; English stays static because it defines the type, is the fallback for unsupported languages, and is what the shells already contain. First load 154 → 105 KiB, the critical chunk 99 → 47 KB gzipped, largest contentful paint 2.1 → 1.8–2.0 s, Lighthouse 98–99 → 99–100. The accepted cost and the rejected `modulepreload` alternative are in `DECISIONS.md`.
+- [x] **Unhashed images had no `Cache-Control` at all**, so the header lockup was refetched on every visit. Bounded `max-age`, not `immutable`, because the filenames carry no content hash. `src/lib/headers.test.ts` fails if an image in `static/` has no rule, and `scripts/check-live-headers.mjs` checks production, since only production can show Cloudflare rewriting it.
+- [ ] Re-measure after any change and update `STACK.md`, recording numbers rather than describing them. Every figure there came from Lighthouse against the real build or from the built output, and each one contradicted a guess made first.
 - [ ] Revisit `no-transform` if Cloudflare ever allows JavaScript Detections to be disabled on this plan. It would restore compression for HTML at no cost to anything else.
-- [ ] Set a budget that fails CI, since `STACK.md` describes budgets that nothing measures. A first-load transfer ceiling is the one worth enforcing, because it is what a user on a hospital connection actually waits for.
+- [ ] Set a budget that fails CI. `STACK.md` now records what the app measures, but nothing enforces it, so the next regression is found by measuring again rather than by the gate. A first-load transfer ceiling is the one worth enforcing, because it is what a user on a hospital connection actually waits for.
 
 ## 12. Deferred
 
 Not in scope. Kept here so the constraints do not have to be rediscovered.
-
-### Product-event counters
-
-A first-party `POST /e` on the Worker writing to D1, for `dose_logged`, `order_generated`, `reminder_enabled`. Same origin so blockers do not touch it, and queueable in IndexedDB offline then flushed. No persistent identifier, so no consent banner; retention via a coarse days-since-install bucket (`0`, `1-7`, `8-30`, `31-90`, `90+`). Add only when a specific decision depends on it.
 
 ### Community statistics
 

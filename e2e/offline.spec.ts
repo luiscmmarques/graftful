@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';
+// Relative, not `$lib`: Playwright runs outside Vite, so the alias does not resolve.
+import { de } from '../src/lib/i18n/de.ts';
 
 /**
  * Offline behaviour.
@@ -130,6 +132,32 @@ test('every route loads with the origin gone', async ({ page }) => {
 		await page.goto(BASE + path);
 		await expect(page.getByText(content, { exact: false }).first()).toBeVisible();
 	}
+});
+
+test('the language can be changed with the origin gone', async ({ page }) => {
+	/*
+	 * The catalogues for the four non-English languages are loaded on demand, so changing
+	 * language is the one setting in the app that needs a file the page did not already have.
+	 * It works offline only because the worker precaches every chunk, and if that ever stopped
+	 * being true the symptom would be a Setup screen where choosing German does nothing — no
+	 * error, no clue, on a device with no network to explain it.
+	 *
+	 * German rather than French: the label is the longest, so a half-applied catalogue would
+	 * show up in this assertion rather than passing on a coincidence.
+	 */
+	await page.goto(BASE);
+	await waitForPrecache(page);
+
+	stopServer();
+	await expect(fetch(BASE)).rejects.toThrow();
+
+	await page.goto(BASE + '/setup');
+	await page.getByRole('combobox').first().selectOption('de');
+	await expect(page.locator('nav.sections a').last()).toHaveText(de.nav.setup);
+
+	// And it survives a reload with the origin still gone, from settings and cache alone.
+	await page.reload();
+	await expect(page.locator('nav.sections a').last()).toHaveText(de.nav.setup);
 });
 
 test('data can be entered with the origin gone', async ({ page }) => {

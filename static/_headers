@@ -111,6 +111,49 @@
 /_app/immutable/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Images, whose filenames carry no hash.
+#
+# These had no Cache-Control at all, so Cloudflare served them with its default and a
+# returning visitor refetched the header lockup on every load. A week is the compromise the
+# unhashed filenames force: long enough to be worth having, short enough that a redesigned
+# mark is not pinned in a browser cache for a year with no way to evict it.
+#
+# Staleness is not the risk it looks like for the files the app itself displays. Workbox
+# precaches them under a revision-stamped URL, so an installed app refetches a changed
+# lockup or icon regardless of what the browser cache holds — this rule reaches the first
+# visit, before the worker is installed, and the files no screen renders: the social card,
+# the install-prompt screenshots and the iOS launch images.
+#
+# Deliberately not `no-transform`, unlike the documents. That directive exists there to stop
+# Cloudflare injecting a script into HTML; on an image it would also switch off Polish, which
+# is a saving rather than a risk.
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/screenshots/*
+  Cache-Control: public, max-age=604800
+
+/lockup.svg
+  Cache-Control: public, max-age=604800
+
+/lockup-inverse.svg
+  Cache-Control: public, max-age=604800
+
+/lockup-52.png
+  Cache-Control: public, max-age=604800
+
+/lockup-104.png
+  Cache-Control: public, max-age=604800
+
+/lockup-inverse-624.png
+  Cache-Control: public, max-age=604800
+
+/og-image.png
+  Cache-Control: public, max-age=604800
+
+/favicon.ico
+  Cache-Control: public, max-age=604800
+
 # Must revalidate, or an update can never be picked up.
 /service-worker.js
   Cache-Control: no-cache

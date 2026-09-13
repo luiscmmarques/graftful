@@ -1,4 +1,14 @@
 import { expect, test } from '@playwright/test';
+/*
+ * Relative paths, not `$lib`: Playwright runs these outside Vite, so the alias does not
+ * resolve. The catalogues import nothing at runtime — only the `Messages` type — so pulling
+ * them into a test file costs nothing and drags no framework in behind them.
+ */
+import { de } from '../src/lib/i18n/de.ts';
+import { en } from '../src/lib/i18n/en-source.ts';
+import { fr } from '../src/lib/i18n/fr.ts';
+import { it } from '../src/lib/i18n/it.ts';
+import { pt } from '../src/lib/i18n/pt.ts';
 
 test('the example regimen is not presented as already exhausted', async ({ page }) => {
 	/*
@@ -116,16 +126,40 @@ test('the content menu opens, navigates and closes', async ({ page }) => {
 	await expect(page.locator('.menu')).toHaveCount(0);
 });
 
-test('navigation labels never clip, in any language', async ({ page }) => {
-	// "Setup" is five characters, "Einstellungen" thirteen and "Impostazioni" twelve, in a
-	// bar of four equal columns. At a fixed font size the German sat exactly on the limit
-	// at 390px.
-	for (const lang of ['en', 'fr', 'de', 'pt', 'it']) {
+test('navigation labels never clip, in any language', async ({ browser }) => {
+	/*
+	 * "Setup" is five characters, "Einstellungen" thirteen and "Impostazioni" twelve, in a bar
+	 * of four equal columns. At a fixed font size the German sat exactly on the limit at 390px.
+	 *
+	 * Two things here look like ceremony and are the test.
+	 *
+	 * A fresh context per language, rather than one page and `page.addInitScript` in a loop.
+	 * Init scripts accumulate on a page, and the second `Object.defineProperty` on the same
+	 * `navigator` throws, so every iteration after the first ran with the *first* language
+	 * still in force. This test measured English five times and passed on a bar that could
+	 * have clipped in all four other languages — which is what it was written to prevent.
+	 *
+	 * And the expected label is awaited, taken from the catalogue rather than spelled out
+	 * here. The four non-English catalogues load on demand (see src/lib/i18n/index.ts) and the
+	 * prerendered shell is English, so measuring straight after `goto` would measure the
+	 * English bar however long the German turned out to be. Waiting for the real label is
+	 * incidentally the only check anywhere that a lazily-loaded catalogue actually arrives.
+	 */
+	for (const [lang, setupLabel] of [
+		['en', en.nav.setup],
+		['fr', fr.nav.setup],
+		['de', de.nav.setup],
+		['pt', pt.nav.setup],
+		['it', it.nav.setup]
+	]) {
+		const context = await browser.newContext({ viewport: { width: 320, height: 844 } });
+		const page = await context.newPage();
 		await page.addInitScript((l) => {
 			Object.defineProperty(navigator, 'languages', { get: () => [l] });
+			Object.defineProperty(navigator, 'language', { get: () => l });
 		}, lang);
-		await page.setViewportSize({ width: 320, height: 844 });
 		await page.goto('/');
+		await expect(page.locator('nav.sections a').last()).toHaveText(setupLabel);
 
 		const clipped = await page
 			.locator('nav.sections a')
@@ -135,6 +169,7 @@ test('navigation labels never clip, in any language', async ({ page }) => {
 					.map((e) => e.textContent?.trim())
 			);
 		expect(clipped, `clipped labels in ${lang}`).toEqual([]);
+		await context.close();
 	}
 });
 
