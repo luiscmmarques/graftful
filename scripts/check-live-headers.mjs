@@ -242,6 +242,24 @@ async function checkAssetCaching() {
 	}
 
 	/*
+	 * The images, whose filenames carry no hash and so get a bounded lifetime rather than a
+	 * year. Checked here for the same reason as the hashed assets: `src/lib/headers.test.ts`
+	 * proves the rule is written, and only production can prove it is honoured.
+	 *
+	 * The lockup stands in for the whole set. It is the one image on every screen, so if
+	 * Cloudflare is rewriting Cache-Control for images at all, this is where it shows.
+	 */
+	const lockup = await head('/lockup.svg');
+	const lockupCache = (lockup.headers.get('cache-control') ?? '').toLowerCase();
+	const lockupMaxAge = Number(lockupCache.match(/max-age=(\d+)/)?.[1] ?? 0);
+	if (lockupMaxAge < 3600) {
+		fail(
+			`/lockup.svg is served "${lockupCache}", with no usable lifetime, so the header mark is ` +
+				'refetched on every visit by the people who open the app daily.'
+		);
+	}
+
+	/*
 	 * The worker is the one file that must never be held: it is fetched by filename, not by hash,
 	 * so a cached copy is a version of the app that can never be replaced.
 	 */

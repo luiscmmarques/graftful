@@ -89,6 +89,45 @@ test('hashed assets are cached hard, and the service worker is not', () => {
 	);
 });
 
+test('the images the app serves are cached, even without a hash in the filename', () => {
+	/*
+	 * These had no rule at all, so Cloudflare answered with its default and a returning
+	 * visitor refetched the header lockup on every load — Lighthouse flags it. Unhashed
+	 * filenames rule out `immutable`, so the rule is a bounded max-age instead, and this test
+	 * exists because the failure is invisible: nothing about the app looks wrong, it is merely
+	 * slower for exactly the people who use it every day.
+	 *
+	 * Enumerated from `static/`, not listed by hand, so adding an image without a rule fails
+	 * by name rather than being noticed a year later in an audit.
+	 */
+	const images = readdirSync('static')
+		.filter((entry) => /\.(png|svg|ico)$/.test(entry))
+		.map((entry) => `/${entry}`);
+
+	for (const asset of [...images, '/icons/icon-192.png', '/screenshots/today-narrow.png']) {
+		/*
+		 * Only the Cache-Control lines, not the whole rule body. Matching the body would find
+		 * the `max-age=31536000` in the Strict-Transport-Security line inherited from `/*` and
+		 * pass for every asset in the app, rule or no rule — which is how the first version of
+		 * this test passed before any of these rules existed.
+		 */
+		const applying = rulesFor(asset)
+			.flatMap((rule) => rule.split('\n'))
+			.filter((line) => line.trim().startsWith('cache-control:'))
+			.join(' ');
+		assert.ok(
+			/max-age=\d{4,}/.test(applying),
+			`${asset} has no Cache-Control rule in static/_headers, so it is refetched on every ` +
+				'visit. Its filename carries no hash, so give it a bounded max-age, not immutable.'
+		);
+		assert.ok(
+			!applying.includes('immutable'),
+			`${asset} is marked immutable, but its filename has no content hash — a replacement ` +
+				'could never reach a browser that had cached it.'
+		);
+	}
+});
+
 /**
  * The adapter's fallback document, read from the Vite config rather than hardcoded.
  *
