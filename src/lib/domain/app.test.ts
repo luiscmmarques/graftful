@@ -177,6 +177,103 @@ test('an as-needed product can be added by hand, since nothing could calculate i
 	assert.match(orderText(withAddition, { locale: 'fr' }), /Etalgan 2 g/);
 });
 
+test('the order the user reads their products in reaches the pharmacy', () => {
+	/*
+	 * The line order in `planOrder` is the line order in the email — `order-text.ts` renders
+	 * them as they arrive. Before this it was an accident of the planner's loops: calculated
+	 * lines in stored order, additions appended after, so asking for one extra box moved that
+	 * product to the bottom of the message.
+	 *
+	 * Positions are put on two products only, which is the realistic case and also the one
+	 * that catches treating an absent position as zero: the numbered pair must lead and
+	 * everything else must follow by name.
+	 */
+	const state = exampleRegimen();
+	const positioned = {
+		...state,
+		products: state.products.map((product) =>
+			product.id === 'eta-a'
+				? { ...product, sortOrder: 1 }
+				: product.id === 'alfa-b'
+					? { ...product, sortOrder: 2 }
+					: product
+		)
+	};
+
+	const plan = planOrder(positioned, SNAPSHOT, { force: true, additions: { 'eta-a': 1 } });
+	const ids = plan.lines.map((line) => line.productId);
+
+	assert.deepEqual(ids.slice(0, 2), ['eta-a', 'alfa-b'], 'numbered products lead, in their order');
+
+	const rest = plan.lines.slice(2).map((line) => line.brandName);
+	assert.deepEqual(
+		rest,
+		[...rest].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+		'the unnumbered remainder follows by name'
+	);
+
+	/*
+	 * And the email agrees with the plan, which is the whole point of sorting in the planner.
+	 *
+	 * Located by the whole rendered line, not by brand name: two of the example products
+	 * share a name and differ only by strength, so `indexOf(brandName)` returns the same
+	 * position for both and the assertion passes on a coincidence.
+	 */
+	const text = orderText(plan, { locale: 'fr' });
+	const positions = plan.lines
+		.filter((line) => line.packages > 0)
+		.map((line) => {
+			const at = text.indexOf(orderLineText(line, 'fr'));
+			if (at < 0) throw new Error(`${line.brandName} is missing from the order text`);
+			return at;
+		});
+
+	assert.deepEqual(
+		positions,
+		[...positions].sort((a, b) => a - b),
+		'the lines appear in the email in the same order as in the plan'
+	);
+
+	// The hand-added product is first in the email, not relegated to the bottom of it.
+	assert.match(text.split('\n\n')[2], /^1 boîte x 100 unités - Etalgan 2 g$/m);
+});
+
+test('the pills in one dose are listed in the reading order too', () => {
+	/*
+	 * This is the list checked against what is in somebody's hand at seven in the morning, so
+	 * it should read the same way every other screen does. It used to follow whatever order
+	 * the composition rows were added in Setup, which is not an order anybody chose.
+	 */
+	const state = exampleRegimen();
+	const multi = scheduleForDay(state, SNAPSHOT)
+		.flatMap((slot) => slot.entries)
+		.find((entry) => entry.items.length > 1);
+	if (!multi) throw new Error('the example regimen has no multi-product dose');
+
+	const byId = new Map(state.products.map((p) => [p.id, p]));
+	const positioned = {
+		...state,
+		products: state.products.map((product) =>
+			product.id === multi.items[multi.items.length - 1].productId
+				? { ...product, sortOrder: 1 }
+				: product
+		)
+	};
+
+	const after = scheduleForDay(positioned, SNAPSHOT)
+		.flatMap((slot) => slot.entries)
+		.find((entry) => entry.therapyId === multi.therapyId);
+	if (!after) throw new Error('the dose disappeared');
+
+	assert.equal(
+		after.items[0].productId,
+		multi.items[multi.items.length - 1].productId,
+		'the numbered product leads its dose'
+	);
+	assert.equal(after.items.length, multi.items.length, 'and nothing was lost in the sort');
+	assert.ok(byId.has(after.items[0].productId));
+});
+
 test('an addition can be requested when nothing has triggered an order', () => {
 	const state = exampleRegimen();
 	// No force, no trigger — asking for something is itself reason enough.

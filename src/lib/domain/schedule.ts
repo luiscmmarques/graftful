@@ -8,6 +8,7 @@
 
 import type { DoseSlot, Product, RegimenState, Therapy, Unit } from './types.ts';
 import { daysBetween } from './dates.ts';
+import { compareByProductId } from './products.ts';
 import { activeDoseVersion } from './stock.ts';
 
 export interface ScheduledItem {
@@ -56,7 +57,14 @@ function buildItems(slot: DoseSlot, products: Map<string, Product>): ScheduledIt
 			amount: item.units * product.strength
 		});
 	}
-	return items;
+	/*
+	 * The pills making up one dose, in the user's own reading order rather than the order
+	 * the composition happens to be stored in. This is the list somebody checks against
+	 * what is in their hand at seven in the morning, so it should read the same way every
+	 * screen does — and the storage order is not a choice anybody made, it is whatever
+	 * order the rows were added in Setup.
+	 */
+	return items.sort((a, b) => compareByProductId(products, a.productId, b.productId));
 }
 
 /**

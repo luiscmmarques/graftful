@@ -159,7 +159,14 @@ export function parseImport(json: string): ImportResult {
 			minDays,
 			form: p.form ? asString(p.form) : undefined,
 			maxOrderUnits: normaliseNumber(p.maxOrderUnits, LIMITS.stockUnits) ?? undefined,
-			retired: p.retired === true ? true : undefined
+			retired: p.retired === true ? true : undefined,
+			/*
+			 * An out-of-range or non-numeric value becomes absent rather than being clamped,
+			 * which is the honest outcome: absent means "no opinion" and sorts the product
+			 * after the numbered ones, whereas clamping would invent a position the user
+			 * never chose and silently move their list.
+			 */
+			sortOrder: normaliseNumber(p.sortOrder, LIMITS.sortOrder) ?? undefined
 		});
 	}
 	const productIds = new Set(products.map((p) => p.id));

@@ -41,7 +41,8 @@ const PRODUCT_FIELDS: Record<keyof Product, true> = {
 	packageSize: true,
 	minDays: true,
 	maxOrderUnits: true,
-	retired: true
+	retired: true,
+	sortOrder: true
 };
 
 const THERAPY_FIELDS: Record<keyof Therapy, true> = {
@@ -120,7 +121,8 @@ const FULL_STATE: RegimenState = {
 			packageSize: 50,
 			minDays: 4,
 			maxOrderUnits: 400,
-			retired: true
+			retired: true,
+			sortOrder: 3
 		}
 	],
 	therapies: [

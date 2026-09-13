@@ -184,6 +184,12 @@ export const de: Messages = {
 		reorderFloor: 'Nachbestellschwelle (Tage)',
 		form: 'Form (optional)',
 		formPlaceholder: 'Tablette, Kapsel…',
+		sortOrderLabel: 'Ihre Reihenfolge (optional)',
+		sortOrderPlaceholder: 'z. B. 1',
+		sortOrderNote:
+			'Eine Zahl, um Ihre Produkte in die Reihenfolge zu bringen, in der Sie sie gewohnt sind zu lesen — Ihr Regal, Ihre Tablettenbox, wie auch immer. Bleibt das Feld leer, wird das Produkt nach Namen einsortiert, hinter den nummerierten. Lücken sind kein Problem: 10, 20, 30 lässt Platz, um später etwas dazwischen zu setzen.',
+		sortOrderPosition: (position) => `Nr. ${position} in Ihrer Reihenfolge`,
+		errorSortOrder: 'Ihre Reihenfolge muss eine ganze Zahl zwischen 1 und 999 oder leer sein.',
 		saveChanges: 'Änderungen speichern',
 		errorProductFields:
 			'Prüfen Sie Name, Stärke, Stück pro Packung und Nachbestellschwelle — jedes muss eine positive Zahl sein.',

@@ -48,6 +48,10 @@ Note that auditability was **not** the reason. Nobody reads source. What actuall
 
 **A zero burn rate reads as `null`, not zero days.** A retired product holding residual stock is not urgent, and neither is an as-needed painkiller.
 
+**Products are listed in the user's own order, and that order reaches the pharmacy.** `sortOrder` is an optional number per product; absent means no opinion and sorts after every product that has one, with brand name and then strength as the fallback. It is not a clinical ranking and nothing is derived from it — it exists because somebody taking eleven products a day learns them in a fixed order (the shelf, the pill box, the order they were prescribed in) and a list sorted by anything else has to be re-read every time.
+
+Two consequences were decided rather than inherited. The Stock screen keeps sorting by urgency, because the box about to run out belongs at the top of that screen whatever it is called; this order is only its tie-breaker, which it previously lacked. And the pharmacy order text follows it too, at the maintainer's explicit request — which also meant dropping the grouping that put hand-added lines after calculated ones, since that grouping sent a product numbered first to the bottom of the email. The provenance of a line is meaningful on the Order screen, where the two are labelled, and meaningless to somebody picking boxes off a shelf.
+
 **Products are retired, never deleted.** Dropping from 20 mg to 14 mg stopped consumption of the 6 mg capsules but did not invalidate the box already in the cupboard. If the dose goes back up, the stock is still there and still known.
 
 **Push payloads carry no health data.** The server knows only when to ping a subscription. The service worker composes the notification from local data.

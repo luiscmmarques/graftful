@@ -138,14 +138,18 @@ export function orderText(plan: OrderPlan, options: OrderTextOptions = {}): stri
 
 	const lines: string[] = [t.greeting, '', t.request(options.collectionNote), ''];
 
-	// Calculated lines first, then anything added by hand — the same order as the
-	// decision that produced them.
-	const ordered = [
-		...plan.lines.filter((l) => !l.optional),
-		...plan.lines.filter((l) => l.optional)
-	];
-
-	for (const line of ordered) {
+	/*
+	 * The lines in the order `planOrder` produced them, which is the user's own reading order
+	 * — see `compareProducts`.
+	 *
+	 * This used to group calculated lines first and hand-added ones after, mirroring the
+	 * decision that produced them. That provenance is meaningful on the Order screen, where
+	 * the two are labelled differently, and meaningless in the email: a pharmacist picking
+	 * boxes off a shelf has no use for which lines an algorithm chose. Worse, it defeated the
+	 * point of sorting at all — a product the user had numbered first still appeared last in
+	 * the message the moment they asked for an extra box of it.
+	 */
+	for (const line of plan.lines) {
 		if (line.packages <= 0) continue;
 		lines.push(orderLineText(line, locale));
 	}
