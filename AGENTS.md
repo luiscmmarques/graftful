@@ -102,6 +102,8 @@ Breaking any of these is a bug even if tests pass.
 
 **A zero burn rate means `daysRemaining === null`, not 0.** A retired product with residual stock is not urgent, and neither is an as-needed painkiller.
 
+**One comparator decides the order products are listed in.** `compareProducts` in `src/lib/domain/products.ts`: the user's optional `sortOrder` when either product has one, then brand name by `localeCompare`, then strength. Use it — or `sortedProducts` / `compareByProductId` — rather than sorting a list by hand, or the Setup dropdown ends up in a different order from the list above it. Absent `sortOrder` sorts _after_ every product that has one and must never be read as zero: numbering one product would then appear to reorder all the others. The Stock screen is the one exception and stays urgency-first, with this as its tie-breaker.
+
 **Products are retired, not deleted** — unless nothing references them. Check with `productUsage`. Deleting a product that appears in a dose, a stock count or a past order leaves a medication history that no longer adds up. Same principle for therapies via `therapyUsage`.
 
 **Ordering does not change stock; receiving does.** An open order suppresses the alert without touching the ledger.
@@ -135,6 +137,8 @@ For the same reason the therapy labels are French but deliberately **not** clini
 **Never adjust the seed's numbers to make a test pass.** If a figure disagrees, the code is probably wrong — that is how the missing-depletion bug was found. Two of the three most valuable bugs in this project were caught by the seed disagreeing.
 
 The order text format in `order-text.ts` is likewise validated against a real email sent to a real pharmacy. Do not "improve" the line shape without a reason from a real order.
+
+The line _order_ has such a reason and is now `compareProducts`, so the email reads in the same order as the screens. It follows `planOrder`'s output directly: `orderText` used to re-group calculated lines before hand-added ones, which put a product the user had numbered first at the bottom of the message the moment they asked for an extra box of it. That provenance still shows on the Order screen, where the two are labelled — it does not belong in an email to somebody picking boxes off a shelf. The maintainer asked for this explicitly; see `DECISIONS.md`.
 
 ## Style
 

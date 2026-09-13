@@ -166,6 +166,12 @@ export const en: Messages = {
 		reorderFloor: 'Reorder floor (days)',
 		form: 'Form (optional)',
 		formPlaceholder: 'tablet, capsule…',
+		sortOrderLabel: 'Your order (optional)',
+		sortOrderPlaceholder: 'e.g. 1',
+		sortOrderNote:
+			'A number to put your products in the order you are used to reading them — your shelf, your pill box, whichever it is. Leave it empty and the product is listed by name, after the ones you have numbered. Gaps are fine: 10, 20, 30 leaves room to slot something in later.',
+		sortOrderPosition: (position) => `no. ${position} in your order`,
+		errorSortOrder: 'Your order must be a whole number between 1 and 999, or empty.',
 		saveChanges: 'Save changes',
 		errorProductFields:
 			'Check the name, strength, units per box and reorder floor — each must be a positive number.',

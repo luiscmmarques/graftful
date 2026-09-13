@@ -46,7 +46,7 @@ AGPL note: the app already ships its code to the browser, so satisfying the sour
 
 ## 0b. Build status
 
-Working and testable: `npm run dev`. 158 unit tests, 17 app and 4 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
+Working and testable: `npm run dev`. 169 unit tests, 18 app and 4 offline end-to-end tests, 0 type errors, offline precache generated and verified with the origin killed.
 
 - [x] SvelteKit + Svelte 5 + Vite, `adapter-static`, every route prerendered
 - [x] Domain layer at `src/lib/domain`, still dependency-free

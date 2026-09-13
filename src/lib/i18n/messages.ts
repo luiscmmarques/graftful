@@ -189,6 +189,13 @@ export interface Messages {
 		reorderFloor: string;
 		form: string;
 		formPlaceholder: string;
+		/** The user's own reading position for a product. Optional; lower comes first. */
+		sortOrderLabel: string;
+		sortOrderPlaceholder: string;
+		sortOrderNote: string;
+		/** Shown beside a product that has a position, e.g. "3rd in your order". */
+		sortOrderPosition: (position: number) => string;
+		errorSortOrder: string;
 		saveChanges: string;
 		errorProductFields: string;
 		confirmDeleteProduct: string;
