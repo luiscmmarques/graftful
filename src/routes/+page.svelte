@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { regimen, replaceAll } from '$lib/db';
 	import { exampleRegimen } from '$lib/domain/seed';
-	import { pillsPerDay, prnTherapies, scheduleForDay } from '$lib/domain/schedule';
+	import { pillsInSlots, prnTherapies, scheduleForDay } from '$lib/domain/schedule';
 	import { productStatuses, stockLevel, type StockLevel } from '$lib/domain/procurement';
+	import { productLabel } from '$lib/domain/products';
 	import StockLight from '$lib/StockLight.svelte';
 	import { formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
@@ -11,7 +12,8 @@
 	const empty = $derived($regimen !== undefined && $regimen.products.length === 0);
 	const slots = $derived($regimen ? scheduleForDay($regimen, $today) : []);
 	const prn = $derived($regimen ? prnTherapies($regimen, $today) : []);
-	const pills = $derived($regimen ? pillsPerDay($regimen, $today) : 0);
+	// Counted from the slots above rather than rebuilt from the state: same number, one pass.
+	const pills = $derived(pillsInSlots(slots));
 
 	// Computed once and shared: the reorder count and the per-entry indicator ask the
 	// same question of the same numbers, and calling it twice invites them to diverge.
@@ -92,8 +94,7 @@
 						{#each entry.items as item (item.productId)}
 							<li>
 								<strong>{formatNumber(item.units)}</strong>
-								× {item.brandName}
-								{item.strength}{item.strengthUnit}
+								× {productLabel(item)}
 								{#if item.form}<span class="muted">({item.form})</span>{/if}
 							</li>
 						{/each}

@@ -1,7 +1,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
-import { pillsPerDay, prnTherapies, scheduleForDay } from './schedule.ts';
+import { pillsInSlots, pillsPerDay, prnTherapies, scheduleForDay } from './schedule.ts';
 import { orderLineText, orderMailto, orderText } from './order-text.ts';
 import { buildIcs, scheduleFingerprint } from './ics.ts';
 import { planOrder, topUpCandidates } from './procurement.ts';
@@ -272,6 +272,102 @@ test('the pills in one dose are listed in the reading order too', () => {
 	);
 	assert.equal(after.items.length, multi.items.length, 'and nothing was lost in the sort');
 	assert.ok(byId.has(after.items[0].productId));
+});
+
+test('the doses under one time follow the reading order as well', () => {
+	/*
+	 * Sorting the pills inside a dose was not enough. A time slot holds one entry per therapy
+	 * and those were pushed in the order the therapies were stored, so a product numbered 1
+	 * could still be read third on the one screen looked at every morning.
+	 */
+	const state = exampleRegimen();
+	const morning = scheduleForDay(state, SNAPSHOT)[0];
+	if (morning.entries.length < 2) throw new Error('the example regimen has a one-dose morning');
+
+	// Number the product leading the *last* entry, so the expected move is unambiguous.
+	const target = morning.entries[morning.entries.length - 1];
+	const positioned = {
+		...state,
+		products: state.products.map((product) =>
+			product.id === target.items[0].productId ? { ...product, sortOrder: 1 } : product
+		)
+	};
+
+	const after = scheduleForDay(positioned, SNAPSHOT)[0];
+	assert.equal(
+		after.entries[0].therapyId,
+		target.therapyId,
+		'the dose holding the numbered product is read first'
+	);
+	assert.equal(after.entries.length, morning.entries.length, 'and no dose was lost in the sort');
+	assert.deepEqual(
+		[...after.entries.map((e) => e.therapyId)].sort(),
+		[...morning.entries.map((e) => e.therapyId)].sort(),
+		'the same therapies, reordered rather than replaced'
+	);
+});
+
+test('numbering a product never reorders the times themselves', () => {
+	/*
+	 * The slots stay chronological whatever the products are called or numbered. Half past
+	 * seven comes before half past nineteen because that is when the pills are swallowed —
+	 * this is the one order on Today that is not the user's to choose.
+	 */
+	const state = exampleRegimen();
+	const positioned = {
+		...state,
+		products: state.products.map((product, index) => ({ ...product, sortOrder: index + 1 }))
+	};
+
+	assert.deepEqual(
+		scheduleForDay(positioned, SNAPSHOT).map((slot) => slot.time),
+		['07:30', '19:30']
+	);
+	// The reorder is a display concern only: the same pills are still swallowed.
+	assert.equal(pillsPerDay(positioned, SNAPSHOT), pillsPerDay(state, SNAPSHOT));
+});
+
+test('an unnumbered dose is read after every numbered one', () => {
+	/*
+	 * The absent-is-not-zero rule, at the level of a dose rather than a pill. Numbering one
+	 * product must not appear to shuffle the therapies the user has said nothing about.
+	 */
+	const state = exampleRegimen();
+	const morning = scheduleForDay(state, SNAPSHOT)[0];
+	if (morning.entries.length < 2) throw new Error('the example regimen has a one-dose morning');
+
+	const last = morning.entries[morning.entries.length - 1];
+	const positioned = {
+		...state,
+		products: state.products.map((product) =>
+			product.id === last.items[0].productId ? { ...product, sortOrder: 500 } : product
+		)
+	};
+
+	const after = scheduleForDay(positioned, SNAPSHOT)[0];
+	assert.equal(
+		after.entries[0].therapyId,
+		last.therapyId,
+		'a single numbered product leads, however high its number'
+	);
+	assert.deepEqual(
+		after.entries.slice(1).map((e) => e.therapyId),
+		morning.entries.slice(0, -1).map((e) => e.therapyId),
+		'and the unnumbered doses keep their existing relative order'
+	);
+});
+
+test('counting a built day agrees with counting from the state', () => {
+	/*
+	 * Today renders the slots and the pill count together, so it counts the list it already
+	 * has instead of rebuilding the whole day for a total. The two must not be able to drift:
+	 * a summary line disagreeing with the pills listed above it reads as a bug in the regimen.
+	 */
+	const state = exampleRegimen();
+	for (const asOf of [SNAPSHOT, '2016-06-01']) {
+		assert.equal(pillsInSlots(scheduleForDay(state, asOf)), pillsPerDay(state, asOf));
+	}
+	assert.equal(pillsInSlots([]), 0, 'an empty day is zero pills, not NaN');
 });
 
 test('an addition can be requested when nothing has triggered an order', () => {

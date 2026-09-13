@@ -8,7 +8,7 @@
 
 import type { DoseSlot, Product, RegimenState, Therapy, Unit } from './types.ts';
 import { daysBetween } from './dates.ts';
-import { compareByProductId } from './products.ts';
+import { compareByProductId, compareNames } from './products.ts';
 import { activeDoseVersion } from './stock.ts';
 
 export interface ScheduledItem {
@@ -34,6 +34,31 @@ export interface ScheduledSlot {
 		totalAmount: number | null;
 		totalUnit: Unit | null;
 	}>;
+}
+
+/**
+ * Which of two therapy entries is read first within one time slot.
+ *
+ * By the leading product of each, so the card holding the product the user numbered first
+ * is the first card under the time. Sorting the pills inside a dose was not enough on its
+ * own: at 08:00 a regimen with three therapies showed them in whatever order the therapies
+ * were added in Setup, so a product numbered 1 could still be read third.
+ *
+ * `items` is already sorted, so `items[0]` is the entry's best-placed product — an entry is
+ * ranked by its own leading pill rather than by an average, for the same reason the stock
+ * indicator takes the worst band: a summary of a group is not what the eye is looking for.
+ * Entries with no items are dropped before this runs, so `items[0]` always exists.
+ *
+ * Therapy name breaks the tie, which happens when two therapies lead with the same product.
+ */
+function compareEntries(
+	products: ReadonlyMap<string, Product>,
+	a: ScheduledSlot['entries'][number],
+	b: ScheduledSlot['entries'][number]
+): number {
+	const byProduct = compareByProductId(products, a.items[0].productId, b.items[0].productId);
+	if (byProduct !== 0) return byProduct;
+	return compareNames(a.therapyName, b.therapyName);
 }
 
 function isActive(therapy: Therapy, asOf: string): boolean {
@@ -101,7 +126,9 @@ export function scheduleForDay(state: RegimenState, asOf: string): ScheduledSlot
 		}
 	}
 
-	return [...byTime.values()].sort((a, b) => a.time.localeCompare(b.time));
+	const slots = [...byTime.values()];
+	for (const slot of slots) slot.entries.sort((a, b) => compareEntries(products, a, b));
+	return slots.sort((a, b) => a.time.localeCompare(b.time));
 }
 
 /** As-needed therapies, which never appear on a schedule. */
@@ -109,15 +136,30 @@ export function prnTherapies(state: RegimenState, asOf: string): Therapy[] {
 	return state.therapies.filter((t) => t.isPrn && isActive(t, asOf));
 }
 
-/** Total pills across the whole day. The "how many do I swallow" number. */
+/**
+ * Total pills across a day already built. The "how many do I swallow" number.
+ *
+ * Separate from `pillsPerDay` because Today renders the schedule and the count together, and
+ * calling both rebuilt the entire day twice per render — every dose version resolved, every
+ * item mapped, every sort run, to reach a total the caller was holding the inputs for. It
+ * counts a list it is handed and derives nothing new.
+ */
+export function pillsInSlots(slots: readonly ScheduledSlot[]): number {
+	let total = 0;
+	for (const slot of slots) {
+		for (const entry of slot.entries) {
+			for (const item of entry.items) total += item.units;
+		}
+	}
+	return total;
+}
+
+/**
+ * Total pills across the whole day, built from the state.
+ *
+ * Kept for callers that hold no schedule; it is `pillsInSlots` over a freshly built day, so
+ * the two can never disagree.
+ */
 export function pillsPerDay(state: RegimenState, asOf: string): number {
-	return scheduleForDay(state, asOf).reduce(
-		(dayTotal, slot) =>
-			dayTotal +
-			slot.entries.reduce(
-				(slotTotal, entry) => slotTotal + entry.items.reduce((sum, item) => sum + item.units, 0),
-				0
-			),
-		0
-	);
+	return pillsInSlots(scheduleForDay(state, asOf));
 }

@@ -354,6 +354,61 @@ test('a granted storage guarantee is not announced', async ({ page }) => {
 	await expect(page.getByText(storageWarning)).toHaveCount(0);
 });
 
+test('a number given to a product moves its dose to the top of Today', async ({ page }) => {
+	/*
+	 * The point of the field, end to end. Sorting the pills inside a dose was not enough on its
+	 * own: a time slot holds one card per therapy and those were read in the order the therapies
+	 * happened to be stored, so a product numbered 1 could still be the third card of the
+	 * morning — on the one screen that is looked at every day.
+	 *
+	 * The product is named in full, including its strength. Writing this against a bare brand
+	 * name matched the seed's retired 1 g Zetacal instead of the 2 g one actually in the dose,
+	 * and numbering a retired product correctly moves nothing.
+	 */
+	const dosed = 'Zetacal Forte 2 g';
+
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Load example regimen' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+
+	const firstSlot = page
+		.locator('.card')
+		.filter({ has: page.getByRole('heading', { level: 3 }) })
+		.first();
+	const entries = firstSlot.locator('.entry');
+	await entries.first().waitFor();
+
+	// Unnumbered, it is read last under the first time — by name, behind five other doses.
+	const before = await entries.allInnerTexts();
+	expect(before.length).toBeGreaterThan(1);
+	expect(before[before.length - 1]).toContain(dosed);
+	expect(before[0]).not.toContain(dosed);
+
+	// Number it through the form the user would actually use, in the Products card — the
+	// therapy of the same name lists the product too, and would otherwise match.
+	await page.goto('/setup');
+	const productLine = page
+		.locator('.card')
+		.filter({ has: page.getByRole('heading', { name: 'Products', exact: true }) })
+		.locator('.line')
+		.filter({ hasText: dosed });
+	await expect(productLine).toHaveCount(1);
+
+	await productLine.getByRole('button', { name: 'Edit' }).click();
+	await productLine.getByLabel('Your order (optional)').fill('1');
+	await productLine.getByRole('button', { name: 'Save changes' }).click();
+
+	// The position is acknowledged where the products are listed...
+	await expect(productLine).toContainText('no. 1 in your order');
+
+	// ...and the dose containing it now leads the morning, with none of the others lost.
+	await page.goto('/');
+	await entries.first().waitFor();
+	const after = await entries.allInnerTexts();
+	expect(after[0]).toContain(dosed);
+	expect(after.length).toBe(before.length);
+});
+
 test('recounting to zero on a day that already has an entry actually takes effect', async ({
 	page
 }) => {
@@ -372,7 +427,7 @@ test('recounting to zero on a day that already has an entry actually takes effec
 	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
 
 	await page.goto('/stock');
-	const card = page.locator('.card').filter({ hasText: 'Alfabine 4mg' }).first();
+	const card = page.locator('.card').filter({ hasText: 'Alfabine 4 mg' }).first();
 	await expect(card).toContainText('150 left');
 
 	await card.getByRole('button', { name: 'Modify' }).click();
@@ -390,7 +445,7 @@ test('recounting to zero on a day that already has an entry actually takes effec
 
 	// And it is in the database, not only on the screen.
 	await page.reload();
-	await expect(page.locator('.card').filter({ hasText: 'Alfabine 4mg' }).first()).toContainText(
+	await expect(page.locator('.card').filter({ hasText: 'Alfabine 4 mg' }).first()).toContainText(
 		'0 left'
 	);
 });

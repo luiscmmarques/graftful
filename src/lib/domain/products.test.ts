@@ -2,7 +2,13 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
 import type { Product } from './types.ts';
-import { compareByProductId, compareProducts, sortedProducts } from './products.ts';
+import {
+	compareByProductId,
+	compareNames,
+	compareProducts,
+	productLabel,
+	sortedProducts
+} from './products.ts';
 
 /**
  * The order products are read in.
@@ -131,4 +137,62 @@ test('comparing by id puts a product the lookup does not know last', () => {
 	assert.ok(compareByProductId(products, 'known', 'ghost') < 0);
 	assert.ok(compareByProductId(products, 'ghost', 'known') > 0);
 	assert.equal(compareByProductId(products, 'ghost', 'other-ghost'), 0);
+});
+
+test('a product is named the same way wherever it is named', () => {
+	/*
+	 * This label was written out at six call sites and had drifted into three answers, so the
+	 * same box read differently in the two dropdowns of the Setup screen. One home for the
+	 * rule, and a test on the shape rather than on each screen.
+	 */
+	assert.equal(
+		productLabel(product({ id: 'a', brandName: 'Alfabine', strength: 4 })),
+		'Alfabine 4 mg'
+	);
+
+	// A space before the unit: it is how a dose is written on a box, and `4mg` runs together
+	// at the text sizes this audience reads at.
+	assert.match(productLabel(product({ id: 'b', brandName: 'Betacor', strength: 400 })), / 400 mg$/);
+});
+
+test('a product counted in tablets is named without a strength', () => {
+	/*
+	 * `cp` counts tablets rather than measuring them, so a number beside it is not a dose.
+	 * `Zetacal 1cp` invites the reading "one tablet", which is not what the field means. Three
+	 * of the six original call sites knew this and three did not.
+	 */
+	const tablet = product({ id: 'c', brandName: 'Zetacal', strength: 1, strengthUnit: 'cp' });
+	assert.equal(productLabel(tablet), 'Zetacal');
+	assert.ok(!productLabel(tablet).includes('cp'));
+	assert.ok(!productLabel(tablet).includes('1'));
+});
+
+test('the label takes anything carrying the three fields it names', () => {
+	/*
+	 * Today holds a `ScheduledItem`, not a `Product`, and used to write the label out by hand
+	 * for exactly that reason. The structural parameter is what stopped that being necessary.
+	 */
+	assert.equal(
+		productLabel({ brandName: 'Gammaphen', strength: 500, strengthUnit: 'mg' }),
+		'Gammaphen 500 mg'
+	);
+});
+
+test('names collate through one shared comparator', () => {
+	/*
+	 * The collator is built once and reused rather than rebuilt per comparison. That is a
+	 * performance change, so what matters here is that the behaviour it replaced is intact:
+	 * accents fold, and an embedded number sorts numerically rather than lexicographically.
+	 */
+	assert.ok(compareNames('Épsilon', 'Zonatril') < 0, 'É folds to E rather than sorting after Z');
+	assert.ok(compareNames('Retard 20', 'Retard 100') < 0, '20 before 100, not between 10 and 20');
+	assert.equal(compareNames('Alfabine', 'alfabine'), 0, 'case is not a distinction here');
+
+	// The same rule the product comparator uses, not a second one that happens to agree today.
+	const left = product({ id: 'l', brandName: 'Épsilon' });
+	const right = product({ id: 'r', brandName: 'Zonatril' });
+	assert.equal(
+		Math.sign(compareProducts(left, right)),
+		Math.sign(compareNames(left.brandName, right.brandName))
+	);
 });
