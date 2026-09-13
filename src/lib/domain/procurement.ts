@@ -9,6 +9,7 @@
 
 import type { OrderPlan, OrderPlanLine, ProductStatus, RegimenState } from './types.ts';
 import { addDays } from './dates.ts';
+import { compareByProductId } from './products.ts';
 import { daysRemaining, projectedOnHand, unitsPerDay } from './stock.ts';
 
 /** Units ordered but not yet received, including partial fulfilments. */
@@ -140,7 +141,8 @@ export function topUpCandidates(
 					onHand: status.onHand
 				}
 			];
-		});
+		})
+		.sort((a, b) => compareByProductId(byId, a.productId, b.productId));
 }
 
 export function planOrder(
@@ -246,9 +248,21 @@ export function planOrder(
 		});
 	}
 
+	/*
+	 * Sorted into the user's own reading order, which reaches the pharmacy: the Order
+	 * screen and `order-text.ts` both render these lines in the order they arrive in.
+	 *
+	 * Until now that order was an accident of the loops above — calculated lines in
+	 * `state.products` order, then additions appended after them, so asking for one extra
+	 * box moved it to the bottom of the email. Sorting also removes that inconsistency
+	 * between a line the app worked out and a line the user asked for.
+	 *
+	 * `triggeredBy` is deliberately left in status order. It is not a list anybody reads —
+	 * it answers "why is there an order at all" and is rendered as a set of names.
+	 */
 	return {
 		triggeredBy,
-		lines,
+		lines: lines.sort((a, b) => compareByProductId(byId, a.productId, b.productId)),
 		projectedNextOrderOn: projectNextOrder(state, asOf, statuses, plannedUnits)
 	};
 }

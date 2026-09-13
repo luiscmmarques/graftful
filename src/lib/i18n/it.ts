@@ -184,6 +184,12 @@ export const it: Messages = {
 		reorderFloor: 'Soglia di riordino (giorni)',
 		form: 'Forma (facoltativo)',
 		formPlaceholder: 'compressa, capsula…',
+		sortOrderLabel: 'Il suo ordine (facoltativo)',
+		sortOrderPlaceholder: 'per es. 1',
+		sortOrderNote:
+			'Un numero per mettere i suoi prodotti nell’ordine in cui è abituato a leggerli — il suo scaffale, il suo portapillole, come preferisce. Se lo lascia vuoto, il prodotto viene elencato per nome, dopo quelli che ha numerato. I salti non sono un problema: 10, 20, 30 lascia spazio per inserirne un altro più tardi.',
+		sortOrderPosition: (position) => `n. ${position} nel suo ordine`,
+		errorSortOrder: 'Il suo ordine deve essere un numero intero tra 1 e 999, oppure vuoto.',
 		saveChanges: 'Salva le modifiche',
 		errorProductFields:
 			'Controlli il nome, il dosaggio, le unità per scatola e la soglia di riordino — ognuno deve essere un numero positivo.',

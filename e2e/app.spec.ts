@@ -275,6 +275,28 @@ test('an empty device refuses to produce a backup rather than a worthless file',
 	expect(downloads).toEqual([]);
 });
 
+test('a backup is named for the day it was taken', async ({ page }) => {
+	/*
+	 * The filename is the only thing distinguishing one backup from another in a downloads
+	 * folder. Without the date every export is `graftful-backup.json` and the browser suffixes
+	 * duplicates "(1)", "(2)", with the newest not necessarily last — on the one file that is
+	 * the only copy of a regimen outside this browser profile.
+	 *
+	 * The date is asserted as a shape rather than against today's date computed here: pinning
+	 * the exact day would make this fail when a run straddles midnight, which is a real
+	 * occurrence in CI and says nothing about the app.
+	 */
+	await page.goto('/');
+	await page.getByRole('button', { name: 'Load example regimen' }).click();
+	await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+
+	await page.goto('/setup');
+	const download = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Export backup (JSON)' }).click();
+
+	expect((await download).suggestedFilename()).toMatch(/^graftful-backup-\d{4}-\d{2}-\d{2}\.json$/);
+});
+
 /*
  * Durable storage.
  *

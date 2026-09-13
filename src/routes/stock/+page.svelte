@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { addStockEvent, regimen, setPackageSize } from '$lib/db';
 	import { productStatuses, stockLevel } from '$lib/domain/procurement';
+	import { compareProducts } from '$lib/domain/products';
 	import StockLight from '$lib/StockLight.svelte';
 	import { formatDays, formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
@@ -20,7 +21,15 @@
 				// Nothing consuming it sinks to the bottom; otherwise most urgent first.
 				const left = a.status.daysRemaining ?? Number.POSITIVE_INFINITY;
 				const right = b.status.daysRemaining ?? Number.POSITIVE_INFINITY;
-				return left - right;
+				if (left !== right) return left - right;
+				/*
+				 * Urgency stays the primary sort here, deliberately: on this screen the box
+				 * about to run out belongs at the top whatever it is called. But equal cover
+				 * used to leave the order to whatever Dexie returned, so the products with
+				 * nothing consuming them — all `null`, all equal — shuffled between renders.
+				 * The user's own order breaks the tie instead.
+				 */
+				return compareProducts(a.product, b.product);
 			});
 	});
 

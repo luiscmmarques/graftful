@@ -181,6 +181,12 @@ export const pt: Messages = {
 		reorderFloor: 'Limite de encomenda (dias)',
 		form: 'Forma (opcional)',
 		formPlaceholder: 'comprimido, cápsula…',
+		sortOrderLabel: 'A sua ordem (opcional)',
+		sortOrderPlaceholder: 'p. ex. 1',
+		sortOrderNote:
+			'Um número para pôr os seus produtos na ordem em que está habituado a lê-los — a prateleira, a caixa dos comprimidos, o que for. Se ficar vazio, o produto é ordenado por nome, depois dos que numerou. Saltar números não é problema: 10, 20, 30 deixa espaço para inserir outro mais tarde.',
+		sortOrderPosition: (position) => `n.º ${position} na sua ordem`,
+		errorSortOrder: 'A sua ordem tem de ser um número inteiro entre 1 e 999, ou ficar vazia.',
 		saveChanges: 'Guardar alterações',
 		errorProductFields:
 			'Verifique o nome, a dosagem, as unidades por caixa e o limite de encomenda — cada um tem de ser um número positivo.',

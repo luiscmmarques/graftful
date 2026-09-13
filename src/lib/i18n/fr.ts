@@ -186,6 +186,12 @@ export const fr: Messages = {
 		reorderFloor: 'Seuil de recommande (jours)',
 		form: 'Forme (facultatif)',
 		formPlaceholder: 'comprimé, gélule…',
+		sortOrderLabel: 'Votre ordre (facultatif)',
+		sortOrderPlaceholder: 'p. ex. 1',
+		sortOrderNote:
+			'Un numéro pour ranger vos produits dans l’ordre où vous avez l’habitude de les lire — votre étagère, votre pilulier, comme vous voulez. Laissez vide et le produit est classé par nom, après ceux que vous avez numérotés. Les trous ne posent pas de problème : 10, 20, 30 laisse de la place pour en insérer un plus tard.',
+		sortOrderPosition: (position) => `n° ${position} dans votre ordre`,
+		errorSortOrder: 'Votre ordre doit être un nombre entier entre 1 et 999, ou rester vide.',
 		saveChanges: 'Enregistrer les modifications',
 		errorProductFields:
 			'Vérifiez le nom, le dosage, les unités par boîte et le seuil de recommande — chacun doit être un nombre positif.',

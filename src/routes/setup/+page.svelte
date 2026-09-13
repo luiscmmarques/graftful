@@ -21,6 +21,7 @@
 	import { buildIcs, scheduleFingerprint } from '$lib/domain/ics';
 	import { composedDose, planDoseChange, retiredProductsIn, therapyUsage } from '$lib/domain/dose';
 	import { productUsage } from '$lib/domain/procurement';
+	import { sortedProducts } from '$lib/domain/products';
 	import { checkDoseConsistency } from '$lib/domain/stock';
 	import type { DoseVersion, Product, RegimenState, Therapy, Unit } from '$lib/domain/types';
 	import { downloadFile, formatNumber } from '$lib/util';
@@ -77,6 +78,8 @@
 	let pPack = $state(0);
 	let pMinDays = $state(3);
 	let pStock = $state(0);
+	// Empty rather than 0: absent means "no opinion", and 0 would claim first place.
+	let pSortOrder = $state<number | ''>('');
 
 	// --- editing an existing product ---
 	let editing = $state<string | null>(null);
@@ -86,6 +89,7 @@
 	let ePack = $state(1);
 	let eMinDays = $state(3);
 	let eForm = $state('');
+	let eSortOrder = $state<number | ''>('');
 	let productError = $state('');
 
 	function openEditor(product: Product) {
@@ -101,6 +105,7 @@
 		ePack = product.packageSize;
 		eMinDays = product.minDays;
 		eForm = product.form ?? '';
+		eSortOrder = product.sortOrder ?? '';
 	}
 
 	async function saveProduct(productId: string) {
@@ -113,6 +118,18 @@
 			return;
 		}
 
+		/*
+		 * An empty box clears the position, which is the only way to undo one. A value that
+		 * fails the bounds is reported rather than dropped: silently ignoring "1000" would
+		 * leave the product where it was with no explanation, on a field whose entire visible
+		 * effect is that the list moves.
+		 */
+		const position = eSortOrder === '' ? null : normaliseNumber(eSortOrder, LIMITS.sortOrder);
+		if (eSortOrder !== '' && position === null) {
+			productError = $t.setup.errorSortOrder;
+			return;
+		}
+
 		productError = '';
 		await updateProduct(productId, {
 			brandName: eBrand.trim(),
@@ -120,7 +137,8 @@
 			strengthUnit: eUnit,
 			packageSize: pack,
 			minDays: floor,
-			form: eForm.trim() || undefined
+			form: eForm.trim() || undefined,
+			sortOrder: position ?? undefined
 		});
 		editing = null;
 	}
@@ -218,6 +236,17 @@
 	let dDeclaredUnit = $state<Unit>('mg');
 	let doseError = $state('');
 
+	/*
+	 * One sorted list, shared by the product list and both dropdowns on this screen.
+	 *
+	 * Sorting inside each `{#each}` would sort the same array three times on every render
+	 * and, worse, let the three drift apart the next time one of them is edited — the
+	 * dropdown you pick a product from should be in the same order as the list you read it
+	 * in. It also decides which product a newly added dose row defaults to, so that is the
+	 * first product as displayed rather than whichever one happens to be stored first.
+	 */
+	const products = $derived(sortedProducts($regimen?.products ?? []));
+
 	const draftTotal = $derived(
 		$regimen ? composedDose($regimen.products, dSlots) : { perDay: 0, perSlot: [], unit: null }
 	);
@@ -271,7 +300,7 @@
 			: [
 					{
 						time: defaultTimes[0],
-						items: [{ productId: $regimen?.products[0]?.id ?? '', units: 1 }]
+						items: [{ productId: products[0]?.id ?? '', units: 1 }]
 					}
 				];
 	}
@@ -293,7 +322,7 @@
 			{
 				// Next unused usual time, or the last one again if they are all taken.
 				time: defaultTimes[dSlots.length] ?? defaultTimes[defaultTimes.length - 1],
-				items: [{ productId: $regimen?.products[0]?.id ?? '', units: 1 }]
+				items: [{ productId: products[0]?.id ?? '', units: 1 }]
 			}
 		];
 	}
@@ -307,7 +336,7 @@
 			i === slotIndex
 				? {
 						...slot,
-						items: [...slot.items, { productId: $regimen?.products[0]?.id ?? '', units: 1 }]
+						items: [...slot.items, { productId: products[0]?.id ?? '', units: 1 }]
 					}
 				: slot
 		);
@@ -437,19 +466,28 @@
 			return;
 		}
 
+		// Reported rather than dropped, for the reason in saveProduct.
+		const position = pSortOrder === '' ? null : normaliseNumber(pSortOrder, LIMITS.sortOrder);
+		if (pSortOrder !== '' && position === null) {
+			productFormError = $t.setup.errorSortOrder;
+			return;
+		}
+
 		productFormError = '';
 		const id = await putProduct({
 			brandName: pBrand.trim(),
 			strength,
 			strengthUnit: pUnit,
 			packageSize: pack,
-			minDays: floor
+			minDays: floor,
+			sortOrder: position ?? undefined
 		});
 		if (stock > 0) {
 			await addStockEvent(id, 'recount', stock, $today, 'Initial count');
 		}
 		pBrand = '';
 		pStock = 0;
+		pSortOrder = '';
 	}
 
 	let therapyFormError = $state('');
@@ -531,7 +569,24 @@
 			return;
 		}
 		exportError = '';
-		downloadFile('graftful-backup.json', await exportJson(), 'application/json');
+		/*
+		 * The date is in the filename, matching the sibling project's `coruja-backup-<date>`.
+		 * Without it every export is `graftful-backup.json` and a downloads folder ends up
+		 * holding four of them named "(1)" through "(3)", with no way to tell which is the
+		 * newest — on the one file that is the only copy of a regimen outside this browser.
+		 * The instant is already inside the file too (`exportedAt`), but nobody opens a
+		 * backup to find out whether it is the one they want.
+		 *
+		 * The date rather than the full instant, so the name stays readable and sorts
+		 * correctly in a file listing. Two exports on one day do not collide destructively:
+		 * browsers suffix a duplicate rather than overwriting it.
+		 *
+		 * `$today` rather than `new Date()`, for the reason in src/lib/lifecycle.ts — this
+		 * runs in a handler so either would be correct here, but the store is the app's one
+		 * notion of today and a page restored from bfcache has already been caught getting
+		 * this wrong once.
+		 */
+		downloadFile(`graftful-backup-${$today}.json`, await exportJson(), 'application/json');
 	}
 
 	let exportError = $state('');
@@ -683,7 +738,7 @@
 <div class="card">
 	<h3>{$t.setup.productsTitle}</h3>
 	{#if $regimen && $regimen.products.length > 0}
-		{#each $regimen.products as product (product.id)}
+		{#each products as product (product.id)}
 			{@const usage = productUsage($regimen, product.id)}
 			<div class="line">
 				<div class="row" style="justify-content: space-between">
@@ -695,6 +750,9 @@
 						<div class="muted">
 							{$t.stock.perBox(product.packageSize)} &middot; {$t.setup.reorderAt(product.minDays)}
 							{#if product.form}&middot; {product.form}{/if}
+							{#if product.sortOrder !== undefined}&middot; {$t.setup.sortOrderPosition(
+									product.sortOrder
+								)}{/if}
 						</div>
 					</div>
 					<div class="row">
@@ -735,7 +793,18 @@
 								<span>{$t.setup.form}</span>
 								<input bind:value={eForm} placeholder={$t.setup.formPlaceholder} />
 							</label>
+							<label class="field">
+								<span>{$t.setup.sortOrderLabel}</span>
+								<input
+									type="number"
+									min="1"
+									step="1"
+									bind:value={eSortOrder}
+									placeholder={$t.setup.sortOrderPlaceholder}
+								/>
+							</label>
 						</div>
+						<p class="muted">{$t.setup.sortOrderNote}</p>
 						<div class="row">
 							<button class="primary" onclick={() => saveProduct(product.id)}>
 								{$t.setup.saveChanges}
@@ -825,7 +894,17 @@
 					bind:value={pStock}
 				/></label
 			>
+			<label class="field"
+				><span>{$t.setup.sortOrderLabel}</span><input
+					type="number"
+					min="1"
+					step="1"
+					bind:value={pSortOrder}
+					placeholder={$t.setup.sortOrderPlaceholder}
+				/></label
+			>
 		</div>
+		<p class="muted">{$t.setup.sortOrderNote}</p>
 		<button class="primary" onclick={addProduct} disabled={!pBrand.trim()}>
 			{$t.setup.addProductButton}
 		</button>
@@ -958,7 +1037,7 @@
 												<label class="field" style="margin:0; flex:2">
 													<span>{$t.setup.product}</span>
 													<select bind:value={item.productId}>
-														{#each $regimen.products as product (product.id)}
+														{#each products as product (product.id)}
 															<option value={product.id}>
 																{product.brandName}
 																{product.strengthUnit === 'cp'
@@ -1095,7 +1174,7 @@
 					<label class="field">
 						<span>{$t.setup.product}</span>
 						<select bind:value={item.productId}>
-							{#each $regimen?.products ?? [] as product (product.id)}
+							{#each products as product (product.id)}
 								<option value={product.id}>
 									{product.brandName}
 									{product.strength}{product.strengthUnit}
@@ -1111,8 +1190,7 @@
 			{/each}
 
 			<button
-				onclick={() =>
-					(tItems = [...tItems, { productId: $regimen?.products[0]?.id ?? '', units: 1 }])}
+				onclick={() => (tItems = [...tItems, { productId: products[0]?.id ?? '', units: 1 }])}
 			>
 				{$t.setup.addProductToDose}
 			</button>

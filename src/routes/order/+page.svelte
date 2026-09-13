@@ -2,6 +2,7 @@
 	import { receiveOrderLine, recordOrder, regimen, saveSettings, settingsStore } from '$lib/db';
 	import { planOrder, productStatuses, topUpCandidates } from '$lib/domain/procurement';
 	import { orderLineText, orderMailto, orderText } from '$lib/domain/order-text';
+	import { compareByProductId } from '$lib/domain/products';
 	import { formatDays, formatNumber } from '$lib/util';
 	import { locale } from '$lib/locale';
 	import { t } from '$lib/i18n';
@@ -46,7 +47,8 @@
 		const byId = new Map($regimen.products.map((p) => [p.id, p]));
 		return $regimen.orderLines
 			.filter((l) => l.unitsOrdered - (l.unitsReceived ?? 0) > 0)
-			.map((l) => ({ line: l, product: byId.get(l.productId) }));
+			.map((l) => ({ line: l, product: byId.get(l.productId) }))
+			.sort((a, b) => compareByProductId(byId, a.line.productId, b.line.productId));
 	});
 
 	function bump(productId: string, by: number) {

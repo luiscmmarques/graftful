@@ -115,5 +115,14 @@ export const LIMITS = {
 	/** A counted quantity of units in a box. */
 	stockUnits: { min: 0, max: 100_000 } as NumberRules,
 	/** Whole boxes on one order line. */
-	packages: { min: 1, max: 1000, integer: true } as NumberRules
+	packages: { min: 1, max: 1000, integer: true } as NumberRules,
+	/**
+	 * The user's own reading position for a product.
+	 *
+	 * Whole numbers only, and from 1 rather than 0, so the field reads as "first, second,
+	 * third" on screen. Nothing is derived from the value — only its order relative to the
+	 * others — so the ceiling exists purely to catch a pasted number, and gaps are fine:
+	 * numbering 10, 20, 30 leaves room to insert without renumbering.
+	 */
+	sortOrder: { min: 1, max: 999, integer: true } as NumberRules
 } as const;

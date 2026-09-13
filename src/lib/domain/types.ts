@@ -47,6 +47,20 @@ export interface Product {
 	 * residual stock. Never delete a product.
 	 */
 	retired?: boolean;
+	/**
+	 * Where this product sits in the user's own reading order. Optional, and lower comes
+	 * first.
+	 *
+	 * Not a clinical ranking and nothing is derived from it: it exists because people who
+	 * take eleven products a day learn them in a fixed order — the shelf, the pill box,
+	 * the order they were prescribed in — and a list sorted by anything else has to be
+	 * re-read every time. Alphabetical is the fallback, not the intent.
+	 *
+	 * Absent means "no opinion", which sorts after every product that has one rather than
+	 * as zero. Treating a missing value as 0 would put every unnumbered product first, so
+	 * numbering one product would appear to reorder all the others.
+	 */
+	sortOrder?: number;
 }
 
 export interface Therapy {
