@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { addStockEvent, regimen, setPackageSize } from '$lib/db';
 	import { productStatuses, stockLevel } from '$lib/domain/procurement';
-	import { compareProducts } from '$lib/domain/products';
+	import { compareProducts, productLabel } from '$lib/domain/products';
 	import StockLight from '$lib/StockLight.svelte';
 	import { formatDays, formatNumber } from '$lib/util';
 	import { today } from '$lib/lifecycle';
@@ -112,7 +112,7 @@
 		<div class="card">
 			<div class="row" style="justify-content: space-between">
 				<div>
-					<strong>{product.brandName} {product.strength}{product.strengthUnit}</strong>
+					<strong>{productLabel(product)}</strong>
 					<div class="muted">
 						{#if product.form}{product.form} &middot;
 						{/if}{$t.stock.perBox(product.packageSize)}

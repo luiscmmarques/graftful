@@ -21,7 +21,7 @@
 	import { buildIcs, scheduleFingerprint } from '$lib/domain/ics';
 	import { composedDose, planDoseChange, retiredProductsIn, therapyUsage } from '$lib/domain/dose';
 	import { productUsage } from '$lib/domain/procurement';
-	import { sortedProducts } from '$lib/domain/products';
+	import { productLabel, sortedProducts } from '$lib/domain/products';
 	import { checkDoseConsistency } from '$lib/domain/stock';
 	import type { DoseVersion, Product, RegimenState, Therapy, Unit } from '$lib/domain/types';
 	import { downloadFile, formatNumber } from '$lib/util';
@@ -267,9 +267,7 @@
 	function describeItem(state: RegimenState, item: { productId: string; units: number }): string {
 		const product = state.products.find((p) => p.id === item.productId);
 		if (!product) return `${item.units} × (unknown)`;
-		const strength =
-			product.strengthUnit === 'cp' ? '' : ` ${product.strength} ${product.strengthUnit}`;
-		return `${formatNumber(item.units)} × ${product.brandName}${strength}`;
+		return `${formatNumber(item.units)} × ${productLabel(product)}`;
 	}
 
 	function openTherapy(therapy: Therapy, versions: DoseVersion[]) {
@@ -743,10 +741,7 @@
 			<div class="line">
 				<div class="row" style="justify-content: space-between">
 					<div>
-						<strong class:retired={product.retired}>
-							{product.brandName}
-							{product.strengthUnit === 'cp' ? '' : `${product.strength} ${product.strengthUnit}`}
-						</strong>
+						<strong class:retired={product.retired}>{productLabel(product)}</strong>
 						<div class="muted">
 							{$t.stock.perBox(product.packageSize)} &middot; {$t.setup.reorderAt(product.minDays)}
 							{#if product.form}&middot; {product.form}{/if}
@@ -1039,10 +1034,7 @@
 													<select bind:value={item.productId}>
 														{#each products as product (product.id)}
 															<option value={product.id}>
-																{product.brandName}
-																{product.strengthUnit === 'cp'
-																	? ''
-																	: `${product.strength} ${product.strengthUnit}`}
+																{productLabel(product)}
 																{product.retired ? $t.setup.retiredParen : ''}
 															</option>
 														{/each}
@@ -1175,10 +1167,7 @@
 						<span>{$t.setup.product}</span>
 						<select bind:value={item.productId}>
 							{#each products as product (product.id)}
-								<option value={product.id}>
-									{product.brandName}
-									{product.strength}{product.strengthUnit}
-								</option>
+								<option value={product.id}>{productLabel(product)}</option>
 							{/each}
 						</select>
 					</label>
