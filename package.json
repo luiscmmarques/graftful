@@ -23,7 +23,7 @@
 		"screenshots": "node scripts/generate-screenshots.mjs"
 	},
 	"dependencies": {
-		"dexie": "^4.2.0"
+		"dexie": "^4.4.6"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.62.1",
